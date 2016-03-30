@@ -1,17 +1,12 @@
-== '''What is Tetrad CLI''' ==
+== '''What is causal-cmd''' ==
 
 
-Tetrad CLI (formerly CCD-Algorithm) is a Java application that provides a command-line interface (CLI) and application programming interface (API) for causal discovery algorithms produced by the Center for Causal Discovery.  The version in this distribution is @ARTIFACT_ID@-@VERSION@.  The application currently includes the algorithm(s):
+Causal-cmd is a Java application that provides a command-line interface (CLI) and application programming interface (API) for causal discovery algorithms produced by the Center for Causal Discovery.  The current version is tetrad-5.3.0-20160318.  The application currently includes the algorithm(s):
 * FGS (Fast Greedy Search) for continuous data -  is an optimization of the Greedy Equivalence Search algorithm	(GES,	Meek	1995;	Chickering	2003).  The optimizations are described in [http://arxiv.org/ftp/arxiv/papers/1507/1507.07749.pdf  ''Scaling up Greedy Causal Search for Continuous Variables'']
 
 Causal discovery algorithms are a class of search algorithms that explore a space of graphical causal models, i.e., graphical models where directed edges imply causation, for a model (or models) that are a good fit for a dataset.  We suggest that newcomers to the field review [http://www.cs.cmu.edu/afs/cs.cmu.edu/project/learn-43/lib/photoz/.g/scottd/fullbook.pdf ''Causation, Prediction and Search''] by Spirtes, Glymour and Scheines for a primer on the subject.
 
 Causal discovery algorithms allow a user to uncover the causal relationships between variables in a dataset.  These discovered causal relationships may be used further--understanding the underlying the processes of a system (e.g., the metabolic pathways of an organism), hypothesis generation (e.g., variables that best explain an outcome), guide experimentation (e.g., what gene knockout experiments should be performed) or prediction (e.g. parameterization of the causal graph using data and then using it as a classifier).
-
-== '''Changes between versions''' ==
-* CCD-Algorithm-4.4 - Initial release with FGS algorithm
-* tetrad-5.3.0-20160215 - Improved handling of zero co-variance variables and constant values.
-* tetrad-5.3.0-20160318 - Added additional validations and validation switches
 
 == '''How can I use it?''' ==
 
@@ -22,7 +17,7 @@ Java 8 is the only prerequisite to run the software.  Note that by default Java 
 Download the this file, [http://www.ccd.pitt.edu/wp-content/uploads/files/Retention.txt Retention.txt], which is a dataset containing information on college graduation and used in the publication "What Do College Ranking Data Tell Us About Student Retention?" by Drudzel and Glymour, 1994.
 
 <pre>
-java -jar @ARTIFACT_ID@-@VERSION@-jar-with-dependencies.jar --algorithm fgs --data Retention.txt  --depth -1 --output output --verbose
+java -jar causal-cmd-5.3.0-20160330-jar-with-dependencies.jar --algorithm fgs --data Retention.txt  --depth -1 --output output --verbose
 </pre>
 
 The program will output the results of the FGS search procedure as a text file (in this example to output).   The beginning of the file contains the algorithm parameters used in the search.
@@ -51,7 +46,7 @@ A-->B There is a causal relationship from variable A to B
 
 ===Use as an API===
 
-Here is an example of using the Tetrad library which is included in Tetrad-CLI as an API.  Javadocs for the API are here http://cmu-phil.github.io/tetrad/tetrad-lib-apidocs/
+Here is an example of using the Tetrad library which is included in causal-cmd as an API.  Javadocs for the API are here http://cmu-phil.github.io/tetrad/tetrad-lib-apidocs/
 
 <pre>
 package edu.cmu.tetrad.cli.search;
@@ -114,9 +109,9 @@ public class FgsApiExample {
 
 Tetrad-cli has different switches for different algorithms.
 
-=== Tetrad-cli usage for FGS for continuous data ===
+=== causal-cmd usage for FGS for continuous data ===
 <pre>
-usage: java -jar tetrad-cli.jar --algorithm fgs --data <arg> [--delimiter
+usage: java -jar causal-cmd-<VERSION>.jar --algorithm fgs --data <arg> [--delimiter
        <arg>] [--depth <arg>] [--exclude-variables <arg>] [--faithful]
        [--graphml] [--help] [--ignore-linear-dependence] [--knowledge
        <arg>] [--no-validation-output] [--out <arg>] [--output-prefix
