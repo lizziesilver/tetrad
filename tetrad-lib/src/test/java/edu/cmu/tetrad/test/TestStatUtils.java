@@ -490,6 +490,7 @@ public class TestStatUtils {
 
             if (!(s <= min(min(a1, a2), a3))) {
                 failed++;
+                System.out.println(String.format("a1: %d a2: %d a3: %d",a1,a2,a3));
                 System.out.println(String.format("Failed on trial: %d, samplesize: %d", trial, sampleSize ));
             }
 
