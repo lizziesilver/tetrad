@@ -402,7 +402,7 @@ public class TestStatUtils {
     public void testNongaussianSums5() {
         RandomUtil randomUtil = RandomUtil.getInstance();
         randomUtil.setSeed(3829483L);
-        int numTrials = 10;
+        int numTrials = 100;
         int sampleSize = 10;
         int count = 0;
         int failed = 0;
@@ -498,7 +498,7 @@ public class TestStatUtils {
         }
 
         double percentFailed = failed / (double) count;
-        assertEquals(0.6, percentFailed, 0.01);
+        assertEquals(0.6, percentFailed, 0.05);
     }
 
     @Test
