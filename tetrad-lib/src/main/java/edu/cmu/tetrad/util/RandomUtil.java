@@ -55,7 +55,7 @@ public class RandomUtil {
     // Random number generator from the Apache library.
     private RandomGenerator randomGenerator;
 
-    private NormalDistribution normal = new NormalDistribution(0, 1);
+    private NormalDistribution normal; // = new NormalDistribution(0, 1);
 
     private long seed;
 
@@ -158,9 +158,10 @@ public class RandomUtil {
     public void setSeed(long seed) {
 
         // Do not change this generator; you will screw up innuerable unit tests!
-        randomGenerator = new SynchronizedRandomGenerator(new Well44497b(seed));
-        seedsToGenerators.put(seed, randomGenerator);
-        normal = new NormalDistribution(randomGenerator, 0, 1);
+        RandomGenerator randomGenerator = new SynchronizedRandomGenerator(new Well44497b(seed));
+        this.seedsToGenerators.put(seed, randomGenerator);
+        this.normal = new NormalDistribution(randomGenerator, 0, 1);
+        this.randomGenerator = randomGenerator;
         this.seed = seed;
     }
 
@@ -168,7 +169,7 @@ public class RandomUtil {
 
         // Do not change this generator; you will screw up innuerable unit tests!
         randomGenerator = seedsToGenerators.get(seed);
-        normal = new NormalDistribution(randomGenerator, 0, 1);
+        this.normal = new NormalDistribution(randomGenerator, 0, 1);
         this.seed = seed;
 
     }
