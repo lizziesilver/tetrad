@@ -498,6 +498,7 @@ public class TestStatUtils {
 
         // depending on OS the correct unit test result is different
         String OS = System.getProperty("os.name").toLowerCase();
+        System.out.println("OS is " + OS);
         if (OS.indexOf("win") >= 0) {
             assertEquals(0.6, percentFailed, 0.01);
         } else if (OS.indexOf("mac") >= 0) {
@@ -507,7 +508,7 @@ public class TestStatUtils {
         } else if (OS.indexOf("sunos") >= 0) {
             assertEquals(0.6, percentFailed, 0.01);
         } else {
-            assertFalse("Your OS is not supported for this unit test!!", false);
+            assertFalse("Your OS is not supported for this unit test!!", true);
 
         }
         assertEquals(0.6, percentFailed, 0.01);
