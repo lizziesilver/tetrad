@@ -499,19 +499,20 @@ public class TestStatUtils {
         // depending on OS the correct unit test result is different
         String OS = System.getProperty("os.name").toLowerCase();
         System.out.println("OS is " + OS);
+        double expectedPercentFailed = 0.6;
         if (OS.indexOf("win") >= 0) {
-            assertEquals(0.6, percentFailed, 0.01);
+            expectedPercentFailed = 0.6;
         } else if (OS.indexOf("mac") >= 0) {
-            assertEquals(0.6, percentFailed, 0.01);
+            expectedPercentFailed = 0.6;
         } else if (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0) {
-            assertEquals(0.7, percentFailed, 0.01);
+            expectedPercentFailed = 0.7;
         } else if (OS.indexOf("sunos") >= 0) {
-            assertEquals(0.6, percentFailed, 0.01);
+            expectedPercentFailed = 0.6;
         } else {
             assertFalse("Your OS is not supported for this unit test!!", true);
 
         }
-        assertEquals(0.6, percentFailed, 0.01);
+        assertEquals(expectedPercentFailed, percentFailed, 0.01);
     }
 
     @Test
