@@ -98,7 +98,6 @@ public class FgsCli {
         MAIN_OPTIONS.addOption(null, "skip-non-zero-variance", false, "Skip check for zero variance variables.");
 
         // output results
-        MAIN_OPTIONS.addOption(null, "graphml", false, "Create graphML output.");
         MAIN_OPTIONS.addOption(null, "json", false, "Create JSON output.");
 
         // output
@@ -117,7 +116,6 @@ public class FgsCli {
     private static int depth;
     private static boolean heuristicSpeedup;
     private static boolean ignoreLinearDependence;
-    private static boolean graphML;
     private static boolean isSerializeJson;
     private static boolean verbose;
     private static int numOfThreads;
@@ -169,9 +167,6 @@ public class FgsCli {
             writer.println();
             writer.println(graph.toString());
 
-            if (graphML) {
-                writeOutGraphML(graph, Paths.get(dirOut.toString(), outputPrefix + "_graph.txt"));
-            }
 
             if (isSerializeJson) {
                 writeOutJson(graph, Paths.get(dirOut.toString(), outputPrefix + "_graph.json"));
@@ -187,27 +182,6 @@ public class FgsCli {
         LOGGER.info(String.format("FGS finished!  Please see %s for details.", outputFile.getFileName().toString()));
     }
 
-    private static void writeOutGraphML(Graph graph, Path outputFile) {
-        if (graph == null) {
-            return;
-        }
-
-        try (PrintStream graphWriter = new PrintStream(new BufferedOutputStream(Files.newOutputStream(outputFile, StandardOpenOption.CREATE)))) {
-            String fileName = outputFile.getFileName().toString();
-
-            String msg = String.format("Writing out GraphML file '%s'.", fileName);
-            System.out.printf("%s: %s%n", DateTime.printNow(), msg);
-            LOGGER.info(msg);
-            XmlPrint.printPretty(GraphmlSerializer.serialize(graph, outputPrefix), graphWriter);
-            msg = String.format("Finished writing out GraphML file '%s'.", fileName);
-            System.out.printf("%s: %s%n", DateTime.printNow(), msg);
-            LOGGER.info(msg);
-        } catch (Throwable throwable) {
-            String errMsg = String.format("Failed when writting out GraphML file '%s'.", outputFile.getFileName().toString());
-            System.err.println(errMsg);
-            LOGGER.error(errMsg, throwable);
-        }
-    }
 
     private static void writeOutJson(Graph graph, Path outputFile) {
         if (graph == null) {
@@ -386,7 +360,6 @@ public class FgsCli {
         fmt.format("ignore-linear-dependence = %s%n", ignoreLinearDependence);
         fmt.format("depth = %d%n", depth);
         fmt.format("heuristic-speedup = %s%n", heuristicSpeedup);
-        fmt.format("graphml = %s%n", graphML);
 
         fmt.format("skip-unique-var-name = %s%n", skipUniqueVarName);
         fmt.format("skip-non-zero-variance = %s%n", skipZeroVariance);
@@ -410,7 +383,6 @@ public class FgsCli {
             depth = Args.getIntegerMin(cmd.getOptionValue("depth", "-1"), -1);
             heuristicSpeedup = !cmd.hasOption("disable-heuristic-speedup");
             ignoreLinearDependence = cmd.hasOption("ignore-linear-dependence");
-            graphML = cmd.hasOption("graphml");
             isSerializeJson = cmd.hasOption("json");
             verbose = cmd.hasOption("verbose");
             numOfThreads = Args.getInteger(cmd.getOptionValue("thread", Integer.toString(Runtime.getRuntime().availableProcessors())));
