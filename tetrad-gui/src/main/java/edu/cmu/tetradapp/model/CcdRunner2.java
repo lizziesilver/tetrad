@@ -41,7 +41,7 @@ public class CcdRunner2 extends AbstractAlgorithmRunner
     static final long serialVersionUID = 23L;
 
     private transient List<PropertyChangeListener> listeners;
-    private transient GCCD ccd;
+    private transient GCcd ccd;
 
 
     //=========================CONSTRUCTORS================================//
@@ -80,187 +80,8 @@ public class CcdRunner2 extends AbstractAlgorithmRunner
         super(model, params, knowledgeBoxModel);
     }
 
-    public CcdRunner2(DataWrapper dataWrapper, Parameters params) {
-        super(new MergeDatasetsWrapper(dataWrapper), params, null);
-    }
-
-    public CcdRunner2(DataWrapper dataWrapper1,
-                      DataWrapper dataWrapper2,
-                      Parameters params) {
-
-        super(new MergeDatasetsWrapper(
-                        dataWrapper1,
-                        dataWrapper2),
-                params, null);
-
-    }
-
-    public CcdRunner2(DataWrapper dataWrapper1,
-                      DataWrapper dataWrapper2,
-                      DataWrapper dataWrapper3,
-                      Parameters params) {
-
-        super(new MergeDatasetsWrapper(
-                        dataWrapper1,
-                        dataWrapper2,
-                        dataWrapper3
-                ),
-                params, null);
-
-    }
-
-    public CcdRunner2(DataWrapper dataWrapper1,
-                      DataWrapper dataWrapper2,
-                      DataWrapper dataWrapper3,
-                      DataWrapper dataWrapper4,
-                      Parameters params) {
-
-        super(new MergeDatasetsWrapper(
-                        dataWrapper1,
-                        dataWrapper2,
-                        dataWrapper3,
-                        dataWrapper4
-                ),
-                params, null);
-
-    }
-
-    public CcdRunner2(DataWrapper dataWrapper1,
-                      DataWrapper dataWrapper2,
-                      DataWrapper dataWrapper3,
-                      DataWrapper dataWrapper4,
-                      DataWrapper dataWrapper5,
-                      Parameters params) {
-
-        super(new MergeDatasetsWrapper(
-                        dataWrapper1,
-                        dataWrapper2,
-                        dataWrapper3,
-                        dataWrapper4,
-                        dataWrapper5
-                ),
-                params, null);
-
-    }
-
-    public CcdRunner2(DataWrapper dataWrapper1,
-                      DataWrapper dataWrapper2,
-                      DataWrapper dataWrapper3,
-                      DataWrapper dataWrapper4,
-                      DataWrapper dataWrapper5,
-                      DataWrapper dataWrapper6,
-                      Parameters params) {
-
-        super(new MergeDatasetsWrapper(
-                        dataWrapper1,
-                        dataWrapper2,
-                        dataWrapper3,
-                        dataWrapper4,
-                        dataWrapper5,
-                        dataWrapper6
-                ),
-                params, null);
-
-    }
-
-    public CcdRunner2(DataWrapper dataWrapper1,
-                      DataWrapper dataWrapper2,
-                      DataWrapper dataWrapper3,
-                      DataWrapper dataWrapper4,
-                      DataWrapper dataWrapper5,
-                      DataWrapper dataWrapper6,
-                      DataWrapper dataWrapper7,
-                      Parameters params) {
-
-        super(new MergeDatasetsWrapper(
-                        dataWrapper1,
-                        dataWrapper2,
-                        dataWrapper3,
-                        dataWrapper4,
-                        dataWrapper5,
-                        dataWrapper6,
-                        dataWrapper7
-                ),
-                params, null);
-
-    }
-
-    public CcdRunner2(DataWrapper dataWrapper1,
-                      DataWrapper dataWrapper2,
-                      DataWrapper dataWrapper3,
-                      DataWrapper dataWrapper4,
-                      DataWrapper dataWrapper5,
-                      DataWrapper dataWrapper6,
-                      DataWrapper dataWrapper7,
-                      DataWrapper dataWrapper8,
-                      Parameters params) {
-
-        super(new MergeDatasetsWrapper(
-                        dataWrapper1,
-                        dataWrapper2,
-                        dataWrapper3,
-                        dataWrapper4,
-                        dataWrapper5,
-                        dataWrapper6,
-                        dataWrapper7,
-                        dataWrapper8
-                ),
-                params, null);
-
-    }
-
-    public CcdRunner2(DataWrapper dataWrapper1,
-                      DataWrapper dataWrapper2,
-                      DataWrapper dataWrapper3,
-                      DataWrapper dataWrapper4,
-                      DataWrapper dataWrapper5,
-                      DataWrapper dataWrapper6,
-                      DataWrapper dataWrapper7,
-                      DataWrapper dataWrapper8,
-                      DataWrapper dataWrapper9,
-                      Parameters params) {
-
-        super(new MergeDatasetsWrapper(
-                        dataWrapper1,
-                        dataWrapper2,
-                        dataWrapper3,
-                        dataWrapper4,
-                        dataWrapper5,
-                        dataWrapper6,
-                        dataWrapper7,
-                        dataWrapper8,
-                        dataWrapper9
-                ),
-                params, null);
-
-    }
-
-    public CcdRunner2(DataWrapper dataWrapper1,
-                      DataWrapper dataWrapper2,
-                      DataWrapper dataWrapper3,
-                      DataWrapper dataWrapper4,
-                      DataWrapper dataWrapper5,
-                      DataWrapper dataWrapper6,
-                      DataWrapper dataWrapper7,
-                      DataWrapper dataWrapper8,
-                      DataWrapper dataWrapper9,
-                      DataWrapper dataWrapper10,
-                      Parameters params) {
-
-        super(new MergeDatasetsWrapper(
-                        dataWrapper1,
-                        dataWrapper2,
-                        dataWrapper3,
-                        dataWrapper4,
-                        dataWrapper5,
-                        dataWrapper6,
-                        dataWrapper7,
-                        dataWrapper8,
-                        dataWrapper9,
-                        dataWrapper10
-                ),
-                params, null);
-
+    public CcdRunner2(DataWrapper[] dataWrappers, Parameters params) {
+        super(new MergeDatasetsWrapper(dataWrappers, params), params, null);
     }
 
     public CcdRunner2(GraphWrapper graphWrapper, Parameters params, KnowledgeBoxModel knowledgeBoxModel) {
@@ -349,7 +170,7 @@ public class CcdRunner2 extends AbstractAlgorithmRunner
 
         if (model instanceof Graph) {
             GraphScore gesScore = new GraphScore((Graph) model);
-            ccd = new GCCD(gesScore);
+            ccd = new GCcd(gesScore);
 //            ccd.setKnowledge(getParameters().getKnowledge());
             ccd.setVerbose(true);
         } else {
@@ -364,7 +185,7 @@ public class CcdRunner2 extends AbstractAlgorithmRunner
 //                    SvrScore gesScore = new SvrScore((DataSet) model);
                     gesScore.setPenaltyDiscount(penaltyDiscount);
                     System.out.println("Score done");
-                    ccd = new GCCD(gesScore);
+                    ccd = new GCcd(gesScore);
                 }
 //                else if (dataSet.isDiscrete()) {
 //                    double samplePrior = ((Parameters) getParameters()).getSamplePrior();
@@ -381,7 +202,7 @@ public class CcdRunner2 extends AbstractAlgorithmRunner
                 SemBicScore gesScore = new SemBicScore((ICovarianceMatrix) model);
                 gesScore.setPenaltyDiscount(penaltyDiscount);
                 gesScore.setPenaltyDiscount(penaltyDiscount);
-                ccd = new GCCD(gesScore);
+                ccd = new GCcd(gesScore);
             } else if (model instanceof DataModelList) {
                 DataModelList list = (DataModelList) model;
 
@@ -405,7 +226,7 @@ public class CcdRunner2 extends AbstractAlgorithmRunner
 
                     SemBicScoreImages fgsScore = new SemBicScoreImages(list);
                     fgsScore.setPenaltyDiscount(penalty);
-                    ccd = new GCCD(fgsScore);
+                    ccd = new GCcd(fgsScore);
                 }
 //                else if (allDiscrete(list)) {
 //                    double structurePrior = ((Parameters) getParameters()).getStructurePrior();

@@ -3,7 +3,6 @@ package edu.cmu.tetrad.algcomparison.algorithm.oracle.pag;
 import edu.cmu.tetrad.algcomparison.algorithm.Algorithm;
 import edu.cmu.tetrad.algcomparison.score.ScoreWrapper;
 import edu.cmu.tetrad.algcomparison.utils.HasKnowledge;
-import edu.cmu.tetrad.algcomparison.utils.TakesInitialGraph;
 import edu.cmu.tetrad.data.DataSet;
 import edu.cmu.tetrad.data.DataType;
 import edu.cmu.tetrad.data.IKnowledge;
@@ -19,18 +18,18 @@ import java.util.List;
  *
  * @author jdramsey
  */
-public class GCCD implements Algorithm, HasKnowledge {
+public class GCcd implements Algorithm {
     static final long serialVersionUID = 23L;
     private ScoreWrapper score;
     private IKnowledge knowledge = new Knowledge2();
 
-    public GCCD(ScoreWrapper score) {
+    public GCcd(ScoreWrapper score) {
         this.score = score;
     }
 
     @Override
     public Graph search(DataSet dataSet, Parameters parameters) {
-        edu.cmu.tetrad.search.GCCD search = new edu.cmu.tetrad.search.GCCD(score.getScore(dataSet, parameters));
+        edu.cmu.tetrad.search.GCcd search = new edu.cmu.tetrad.search.GCcd(score.getScore(dataSet, parameters));
         search.setKnowledge(knowledge);
 
         return search.search();
@@ -53,16 +52,8 @@ public class GCCD implements Algorithm, HasKnowledge {
 
     @Override
     public List<String> getParameters() {
-        return score.getParameters();
-    }
-
-    @Override
-    public IKnowledge getKnowledge() {
-        return knowledge;
-    }
-
-    @Override
-    public void setKnowledge(IKnowledge knowledge) {
-        this.knowledge = knowledge;
+        List<String> parameters = score.getParameters();
+        parameters.add("depth");
+        return parameters;
     }
 }
