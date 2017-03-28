@@ -27,9 +27,10 @@ import edu.cmu.tetrad.algcomparison.algorithm.cluster.Fofc;
 import edu.cmu.tetrad.algcomparison.algorithm.cluster.Ftfc;
 import edu.cmu.tetrad.algcomparison.algorithm.continuous.dag.Lingam;
 import edu.cmu.tetrad.algcomparison.algorithm.mixed.Mgm;
+import edu.cmu.tetrad.algcomparison.algorithm.multi.FangConcatenated;
 import edu.cmu.tetrad.algcomparison.algorithm.multi.ImagesBDeu;
+import edu.cmu.tetrad.algcomparison.algorithm.multi.ImagesCcd;
 import edu.cmu.tetrad.algcomparison.algorithm.multi.ImagesSemBic;
-import edu.cmu.tetrad.algcomparison.algorithm.multi.TsImagesSemBic;
 import edu.cmu.tetrad.algcomparison.algorithm.oracle.pag.*;
 import edu.cmu.tetrad.algcomparison.algorithm.oracle.pattern.*;
 import edu.cmu.tetrad.algcomparison.algorithm.other.Glasso;
@@ -155,30 +156,25 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
         descriptions.add(new AlgorithmDescription(AlgName.CPC, AlgType.forbid_latent_common_causes, OracleType.Test));
         descriptions.add(new AlgorithmDescription(AlgName.PCStable, AlgType.forbid_latent_common_causes, OracleType.Test));
         descriptions.add(new AlgorithmDescription(AlgName.CPCStable, AlgType.forbid_latent_common_causes, OracleType.Test));
-//        descriptions.add(new AlgorithmDescription(AlgName.PcLocal, AlgType.forbid_latent_common_causes, OracleType.Test));
         descriptions.add(new AlgorithmDescription(AlgName.PcMax, AlgType.forbid_latent_common_causes, OracleType.Test));
-        descriptions.add(new AlgorithmDescription(AlgName.FGS, AlgType.forbid_latent_common_causes, OracleType.Score));
+        descriptions.add(new AlgorithmDescription(AlgName.FGES, AlgType.forbid_latent_common_causes, OracleType.Score));
         descriptions.add(new AlgorithmDescription(AlgName.IMaGES_BDeu, AlgType.forbid_latent_common_causes, OracleType.None));
         descriptions.add(new AlgorithmDescription(AlgName.IMaGES_SEM_BIC, AlgType.forbid_latent_common_causes, OracleType.None));
-        //        descriptions.add(new AlgorithmDescription(AlgName.PcMaxLocal, AlgType.forbid_latent_common_causes, OracleType.Test));
-//        descriptions.add(new AlgorithmDescription(AlgName.JCPC, AlgType.forbid_latent_common_causes, OracleType.Test));
+        descriptions.add(new AlgorithmDescription(AlgName.IMaGES_CCD, AlgType.forbid_latent_common_causes, OracleType.None));
         descriptions.add(new AlgorithmDescription(AlgName.CCD, AlgType.forbid_latent_common_causes, OracleType.Test));
-        descriptions.add(new AlgorithmDescription(AlgName.GCCD, AlgType.forbid_latent_common_causes, OracleType.Both));
+        descriptions.add(new AlgorithmDescription(AlgName.CCD_MAX, AlgType.forbid_latent_common_causes, OracleType.Test));
+        descriptions.add(new AlgorithmDescription(AlgName.FANG, AlgType.forbid_latent_common_causes, OracleType.None));
 
         descriptions.add(new AlgorithmDescription(AlgName.FCI, AlgType.allow_latent_common_causes, OracleType.Test));
         descriptions.add(new AlgorithmDescription(AlgName.RFCI, AlgType.allow_latent_common_causes, OracleType.Test));
         descriptions.add(new AlgorithmDescription(AlgName.CFCI, AlgType.allow_latent_common_causes, OracleType.Test));
         descriptions.add(new AlgorithmDescription(AlgName.GFCI, AlgType.allow_latent_common_causes, OracleType.Both));
-        descriptions.add(new AlgorithmDescription(AlgName.TsFCI, AlgType.allow_latent_common_causes, OracleType.None));
-        descriptions.add(new AlgorithmDescription(AlgName.TsGFCI, AlgType.allow_latent_common_causes, OracleType.None));
-        descriptions.add(new AlgorithmDescription(AlgName.TsImages, AlgType.allow_latent_common_causes, OracleType.None));
-//        descriptions.add(new AlgorithmDescription(AlgName.FgsMeasurement, AlgType.forbid_latent_common_causes, OracleType.Score));
         descriptions.add(new AlgorithmDescription(AlgName.TsFCI, AlgType.allow_latent_common_causes, OracleType.Test));
         descriptions.add(new AlgorithmDescription(AlgName.TsGFCI, AlgType.allow_latent_common_causes, OracleType.Both));
+        descriptions.add(new AlgorithmDescription(AlgName.TsImages, AlgType.allow_latent_common_causes, OracleType.Test));
 
-        descriptions.add(new AlgorithmDescription(AlgName.FgsMb, AlgType.search_for_Markov_blankets, OracleType.Score));
+        descriptions.add(new AlgorithmDescription(AlgName.FgesMb, AlgType.search_for_Markov_blankets, OracleType.Score));
         descriptions.add(new AlgorithmDescription(AlgName.MBFS, AlgType.search_for_Markov_blankets, OracleType.Score));
-//        descriptions.add(new AlgorithmDescription(AlgName.Wfgs, AlgType.forbid_latent_common_causes, OracleType.None));
         descriptions.add(new AlgorithmDescription(AlgName.FAS, AlgType.produce_undirected_graphs, OracleType.Test));
 
 //        descriptions.add(new AlgorithmDescription(AlgName.LiNGAM, AlgType.DAG, OracleType.None));
@@ -507,18 +503,20 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
 
 
         switch (name) {
-            case FGS:
-                if (runner.getSourceGraph() != null && !runner.getDataModelList().isEmpty()) {
-                    algorithm = new Fgs(scoreWrapper, new SingleGraphAlg(runner.getSourceGraph()));
-                } else {
-                    algorithm = new Fgs(scoreWrapper);
-                }
-                break;
-//            case FgsMeasurement:
+            case FGES:
+                algorithm = new Fges(scoreWrapper);
+
 //                if (runner.getSourceGraph() != null && !runner.getDataModelList().isEmpty()) {
-//                    algorithm = new FgsMeasurement(scoreWrapper, new SingleGraphAlg(runner.getSourceGraph()));
+//                    algorithm = new Fges(scoreWrapper, new SingleGraphAlg(runner.getSourceGraph()));
 //                } else {
-//                    algorithm = new FgsMeasurement(scoreWrapper);
+//                algorithm = new Fges(scoreWrapper);
+//                }
+                break;
+//            case FgesMeasurement:
+//                if (runner.getSourceGraph() != null && !runner.getDataModelList().isEmpty()) {
+//                    algorithm = new FgesMeasurement(scoreWrapper, new SingleGraphAlg(runner.getSourceGraph()));
+//                } else {
+//                    algorithm = new FgesMeasurement(scoreWrapper);
 //                }
 //                break;
             case PC:
@@ -549,11 +547,12 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
                 algorithm = new Gfci(independenceWrapper, scoreWrapper);
                 break;
             case FCI:
-                if (runner.getSourceGraph() != null && !runner.getDataModelList().isEmpty()) {
-                    algorithm = new Fci(independenceWrapper, new SingleGraphAlg(runner.getSourceGraph()));
-                } else {
-                    algorithm = new Fci(independenceWrapper);
-                }
+                algorithm = new Fci(independenceWrapper);
+//                if (runner.getSourceGraph() != null && !runner.getDataModelList().isEmpty()) {
+//                    algorithm = new Fci(independenceWrapper, new SingleGraphAlg(runner.getSourceGraph()));
+//                } else {
+//                    algorithm = new Fci(independenceWrapper);
+//                }
                 break;
             case RFCI:
                 algorithm = new Rfci(independenceWrapper);
@@ -562,40 +561,42 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
                 algorithm = new Cfci(independenceWrapper);
                 break;
             case TsFCI:
-                if (runner.getSourceGraph() != null && !runner.getDataModelList().isEmpty()) {
-                    algorithm = new TsFci(independenceWrapper, new SingleGraphAlg(runner.getSourceGraph()));
-                } else {
-                    algorithm = new TsFci(independenceWrapper);
-                }
+                algorithm = new TsFci(independenceWrapper);
+//                if (runner.getSourceGraph() != null && !runner.getDataModelList().isEmpty()) {
+//                    algorithm = new TsFci(independenceWrapper, new SingleGraphAlg(runner.getSourceGraph()));
+//                } else {
+//                    algorithm = new TsFci(independenceWrapper);
+//                }
                 break;
             case TsGFCI:
                 algorithm = new TsGfci(independenceWrapper, scoreWrapper);
                 break;
             case TsImages:
-                algorithm = new TsImagesSemBic();
+                algorithm = new TsImages(scoreWrapper);
                 break;
             case CCD:
                 algorithm = new Ccd(independenceWrapper);
                 break;
-            case GCCD:
-                algorithm = new GCcd(independenceWrapper, scoreWrapper);
+            case CCD_MAX:
+                algorithm = new CcdMax(independenceWrapper);
+                break;
+            case FANG:
+                algorithm = new FangConcatenated();
                 break;
             case FAS:
                 algorithm = new FAS(independenceWrapper);
                 break;
-            case FgsMb:
-                if (runner.getSourceGraph() != null && !runner.getDataModelList().isEmpty()) {
-                    algorithm = new FgsMb(scoreWrapper, new SingleGraphAlg(runner.getSourceGraph()));
-                } else {
-                    algorithm = new FgsMb(scoreWrapper);
-                }
+            case FgesMb:
+                algorithm = new FgesMb(scoreWrapper);
+//                if (runner.getSourceGraph() != null && !runner.getDataModelList().isEmpty()) {
+//                    algorithm = new FgesMb(scoreWrapper, new SingleGraphAlg(runner.getSourceGraph()));
+//                } else {
+//                    algorithm = new FgesMb(scoreWrapper);
+//                }
                 break;
             case MBFS:
                 algorithm = new MBFS(independenceWrapper);
                 break;
-//            case PcLocal:
-//                algorithm = new PcLocal(independenceWrapper);
-//                break;
             case PcMax:
                 algorithm = new PcMax(independenceWrapper);
                 break;
@@ -613,6 +614,9 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
                 break;
             case IMaGES_SEM_BIC:
                 algorithm = new ImagesSemBic();
+                break;
+            case IMaGES_CCD:
+                algorithm = new ImagesCcd();
                 break;
             case GLASSO:
                 algorithm = new Glasso();
@@ -639,6 +643,7 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
                 break;
             case R3:
                 algorithm = new R3(new SingleGraphAlg(runner.getSourceGraph()));
+                ((R3) algorithm).setKnowledge(runner.getKnowledge());
                 break;
             case R4:
                 algorithm = new R4(new SingleGraphAlg(runner.getSourceGraph()));
@@ -837,7 +842,7 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
             @Override
             public void actionPerformed(ActionEvent e) {
                 JComboBox box = (JComboBox) testDropdown;
-                String name = box.getSelectedItem().toString();
+//                String name = box.getSelectedItem().toString();
 //                helpSet.setHomeID(name.toLowerCase());
                 helpSet.setHomeID("under_construction");
                 HelpBroker broker = helpSet.createHelpBroker();
@@ -850,7 +855,7 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
             @Override
             public void actionPerformed(ActionEvent e) {
                 JComboBox box = (JComboBox) scoreDropdown;
-                String name = box.getSelectedItem().toString();
+//                String name = box.getSelectedItem().toString();
 //                helpSet.setHomeID(name.toLowerCase());
                 helpSet.setHomeID("under_construction");
                 HelpBroker broker = helpSet.createHelpBroker();
@@ -996,14 +1001,14 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
     }
 
     private enum AlgName {
-        PC, PCStable, CPC, CPCStable, FGS, /*PcLocal,*/ PcMax, PcMaxLocal, FAS,
-        FgsMb, MBFS, Wfgs, JCPC, /*FgsMeasurement,*/
-        FCI, RFCI, CFCI, GFCI, TsFCI, TsGFCI, TsImages, CCD, GCCD,
+        PC, PCStable, CPC, CPCStable, FGES, /*PcLocal,*/ PcMax, FAS,
+        FgesMb, MBFS, Wfges, JCPC, /*FgesMeasurement,*/
+        FCI, RFCI, CFCI, GFCI, TsFCI, TsGFCI, TsImages, CCD, CCD_MAX,
         LiNGAM, MGM,
-        IMaGES_BDeu, IMaGES_SEM_BIC,
+        IMaGES_BDeu, IMaGES_SEM_BIC, IMaGES_CCD,
         Bpc, Fofc, Ftfc,
         GLASSO,
-        EB, R1, R2, R3, R4, RSkew, RSkewE, Skew, SkewE, Tahn
+        EB, R1, R2, R3, R4, RSkew, RSkewE, Skew, SkewE, FANG, Tahn
     }
 
     private enum OracleType {None, Test, Score, Both}

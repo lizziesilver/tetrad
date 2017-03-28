@@ -4,12 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Stores descriptions of the parameters for the simulation box. All parameters that go
- * into the interface need to be described here.
+ * Stores descriptions of the parameters for the simulation box. All parameters
+ * that go into the interface need to be described here.
  *
  * @author jdramsey
  */
 public class ParamDescriptions {
+
     private static ParamDescriptions instance = new ParamDescriptions();
     private Map<String, ParamDescription> map = new HashMap<>();
 
@@ -17,7 +18,7 @@ public class ParamDescriptions {
         put("numMeasures", new ParamDescription("Number of measured variables", 10, 1, Integer.MAX_VALUE));
         put("numLatents", new ParamDescription("Number of latent variables", 0, 0, Integer.MAX_VALUE));
         put("avgDegree", new ParamDescription("Average degree of graph", 2, 1, Integer.MAX_VALUE));
-        put("maxDegree", new ParamDescription("Maximum degree of graph", 100, 1, Integer.MAX_VALUE));
+        put("maxDegree", new ParamDescription("The maximum degree of the graph.", 100, -1, Integer.MAX_VALUE));
         put("maxIndegree", new ParamDescription("Maximum indegree of graph", 100, 1, Integer.MAX_VALUE));
         put("maxOutdegree", new ParamDescription("Maximum outdegree of graph", 100, 1, Integer.MAX_VALUE));
         put("connected", new ParamDescription("Yes if graph should be connected", false));
@@ -26,7 +27,7 @@ public class ParamDescriptions {
         put("differentGraphs", new ParamDescription("Yes if a different graph should be used for each run", false));
         put("alpha", new ParamDescription("Cutoff for p values (alpha)", 0.01, 0.0, 1.0));
         put("penaltyDiscount", new ParamDescription("Penalty discount", 4.0, 0.0, Double.MAX_VALUE));
-        put("fgsDepth", new ParamDescription("Maximum number of new colliders", 1, 1, Integer.MAX_VALUE));
+        put("fgesDepth", new ParamDescription("Maximum number of new colliders", 1, 1, Integer.MAX_VALUE));
         put("standardize", new ParamDescription("Yes if the data should be standardized", false));
         put("measurementVariance", new ParamDescription("Additive measurement noise variance", 0.0, 0, Double.MAX_VALUE));
         put("depth", new ParamDescription("Maximum size of conditioning set", -1, -1, Integer.MAX_VALUE));
@@ -61,10 +62,10 @@ public class ParamDescriptions {
                 new ParamDescription("General function template for latent variables", "TSUM(NEW(B)*$)"));
         put("generalSemErrorTemplate",
                 new ParamDescription("General function for error terms", "Beta(2, 5)"));
-        put("coefSymmetric", new ParamDescription("Yes if negative coefficient " +
-                "values should be considered", true));
-        put("covSymmetric", new ParamDescription("Yes if negative covariance " +
-                "values should be considered", true));
+        put("coefSymmetric", new ParamDescription("Yes if negative coefficient "
+                + "values should be considered", true));
+        put("covSymmetric", new ParamDescription("Yes if negative covariance "
+                + "values should be considered", true));
         put("retainPreviousValues", new ParamDescription("Retain previous values", false));
 
         // Boolean Glass parameters.
@@ -87,8 +88,8 @@ public class ParamDescriptions {
         put("pixelDigitalization", new ParamDescription("Pixel digitalization", 0.025, 0.0, Double.MAX_VALUE));
         put("includeDishAndChipColumns", new ParamDescription("Yes if Dish and Chip columns should be included in output", true));
 
-        put("numRandomSelections", new ParamDescription("The number random selections of data sets that should be taken", 5));
-        put("randomSelectionSize", new ParamDescription("The number of datasets that should be taken in each random sample", 5));
+        put("numRandomSelections", new ParamDescription("The number random selections of data sets that should be taken", 1));
+        put("randomSelectionSize", new ParamDescription("The number of datasets that should be taken in each random sample", 1));
 
         put("maxit", new ParamDescription("MAXIT parameter (GLASSO)", 10000, 1, Integer.MAX_VALUE));
         put("ia", new ParamDescription("IA parameter (GLASSO)", false));
@@ -100,7 +101,6 @@ public class ParamDescriptions {
         put("targetName", new ParamDescription("Target name", ""));
         put("verbose", new ParamDescription("Yes if verbose output should be printed to standard out", false));
         put("faithfulnessAssumed", new ParamDescription("Yes if (one edge) faithfulness should be assumed", false));
-        put("maxDegree", new ParamDescription("The maximum degree of the output graph", 5));
 
         put("useWishart", new ParamDescription("Yes if the Wishart test shoud be used. No if the Delta test should be used", false));
         put("useGap", new ParamDescription("Yes if the GAP algorithms should be used. No if the SAG algorithm should be used", false));
@@ -114,12 +114,47 @@ public class ParamDescriptions {
         put("measuredMeasuredImpureAssociations", new ParamDescription("Number of Measured <-> Measured impure edges", 0));
 
 //        put("useRuleC", new ParamDescription("Yes if rule C for CCD should be used", false));
-        put("applyR1", new ParamDescription("Yes if the orient away from arrow should be applied", false));
+        put("applyR1", new ParamDescription("Yes if the orient away from arrow rule should be applied", true));
         put("probCycle", new ParamDescription("The probability of adding a cycle to the graph", 1.0, 0.0, 1.0));
         put("intervalBetweenShocks", new ParamDescription("Interval beween shocks (R. A. Fisher simulation model)",
                 10, 1, Integer.MAX_VALUE));
+        put("intervalBetweenRecordings", new ParamDescription(
+                "Interval between data recordings for the linear Fisher model",
+                10, 1, Integer.MAX_VALUE));
+
+        put("skipNumRecords", new ParamDescription("Number of records that should be skipped between recordings",
+                0, 0, Integer.MAX_VALUE));
         put("fisherEpsilon", new ParamDescription("Epsilon where |xi.t - xi.t-1| < epsilon, criterion for convergence",
                 .001, Double.MIN_VALUE, Double.MAX_VALUE));
+
+        put("useMaxPOrientationHeuristic", new ParamDescription(
+                "Yes if the heuristic for orienting unshielded colliders for max P should be used",
+                true));
+        put("maxPOrientationMaxPathLength", new ParamDescription(
+                "Maximum path length for the unshielded collider heuristic for max P",
+                3, 0, Integer.MAX_VALUE));
+        put("orientTowardDConnections", new ParamDescription(
+                "Yes if Richardson's step C (orient toward d-connection) should be used",
+                true));
+        put("orientVisibleFeedbackLoops", new ParamDescription(
+                "Yes if visible feedback loops should be oriented",
+                true));
+        put("doColliderOrientation", new ParamDescription(
+                "Yes if unshielded collider orientation should be done",
+                true));
+
+        put("completeRuleSetUsed", new ParamDescription(
+                "Yes if the complete FCI rule set should be used",
+                false));
+
+        put("maxDistinctValuesDiscrete", new ParamDescription(
+                "The maximum number of distinct values in a column for discrete variables",
+                0, 0, Integer.MAX_VALUE));
+
+        put("symmetricFirstStep", new ParamDescription(
+                "Yes if the heuristic a symmetric first step should be used for FGES",
+                false));
+
     }
 
     public static ParamDescriptions instance() {

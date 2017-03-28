@@ -21,7 +21,6 @@
 
 package edu.cmu.tetrad.performance;
 
-import edu.cmu.tetrad.algcomparison.score.SemBicScore;
 import edu.cmu.tetrad.data.CovarianceMatrix;
 import edu.cmu.tetrad.data.DataSet;
 import edu.cmu.tetrad.data.DataUtils;
@@ -33,7 +32,6 @@ import edu.cmu.tetrad.search.IndTestFisherZ;
 import edu.cmu.tetrad.search.Pc;
 import edu.cmu.tetrad.sem.SemIm;
 import edu.cmu.tetrad.sem.SemPm;
-import edu.cmu.tetrad.util.RandomUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -175,13 +173,13 @@ public class PerformanceTestsDan {
 
             final IndTestFisherZ independenceTestGFci = new IndTestFisherZ(cov, alphaGFci);
             final edu.cmu.tetrad.search.SemBicScore scoreGfci = new edu.cmu.tetrad.search.SemBicScore(cov);
-            scoreGfci.setParameter1(penaltyDiscount);
+            scoreGfci.setPenaltyDiscount(penaltyDiscount);
 
             out6.println("GFCI.PAG");
 
             GFci gFci = new GFci(independenceTestGFci, scoreGfci);
             gFci.setVerbose(false);
-            gFci.setMaxIndegree(depth);
+            gFci.setMaxDegree(depth);
             gFci.setMaxPathLength(maxPathLength);
 //            gFci.setPossibleDsepSearchDone(true);
             gFci.setCompleteRuleSetUsed(true);

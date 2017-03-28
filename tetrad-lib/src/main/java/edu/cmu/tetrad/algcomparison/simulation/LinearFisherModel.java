@@ -2,10 +2,7 @@ package edu.cmu.tetrad.algcomparison.simulation;
 
 import edu.cmu.tetrad.algcomparison.graph.RandomGraph;
 import edu.cmu.tetrad.algcomparison.utils.TakesData;
-import edu.cmu.tetrad.data.DataModel;
-import edu.cmu.tetrad.data.DataSet;
-import edu.cmu.tetrad.data.DataType;
-import edu.cmu.tetrad.data.Discretizer;
+import edu.cmu.tetrad.data.*;
 import edu.cmu.tetrad.graph.Graph;
 import edu.cmu.tetrad.graph.Node;
 import edu.cmu.tetrad.sem.LargeScaleSimulation;
@@ -37,11 +34,11 @@ public class LinearFisherModel implements Simulation, TakesData {
         this.randomGraph = graph;
         this.shocks = shocks;
 
-        JOptionPane.showMessageDialog(JOptionUtils.centeringComp(),
-                "The initial dataset you've provided will be used as initial shocks" +
-                        "\nfor a Fisher model.");
-
         if (shocks != null) {
+            JOptionPane.showMessageDialog(JOptionUtils.centeringComp(),
+                    "The initial dataset you've provided will be used as initial shocks" +
+                            "\nfor a Fisher model.");
+
             for (DataModel _shocks : shocks) {
                 if (_shocks == null) throw new NullPointerException("Dataset containing shocks must not be null.");
                 DataSet dataSet = (DataSet) _shocks;
@@ -86,14 +83,20 @@ public class LinearFisherModel implements Simulation, TakesData {
             simulator.setVarRange(
                     parameters.getDouble("varLow"),
                     parameters.getDouble("varHigh"));
+            simulator.setCoefSymmetric(parameters.getBoolean("coefSymmetric"));
+            simulator.setMeanRange(
+                    parameters.getDouble("meanLow"),
+                    parameters.getDouble("meanHigh"));
+
             simulator.setVerbose(parameters.getBoolean("verbose"));
 
             DataSet dataSet;
 
             if (shocks == null) {
                 dataSet = simulator.simulateDataFisher(
-                        simulator.getSoCalledPoissonShocks(parameters.getInt("sampleSize")),
                         parameters.getInt("intervalBetweenShocks"),
+                        parameters.getInt("intervalBetweenRecordings"),
+                        parameters.getInt("sampleSize"),
                         parameters.getDouble("fisherEpsilon")
                 );
             } else {
@@ -127,7 +130,7 @@ public class LinearFisherModel implements Simulation, TakesData {
                 dataSet.setName(name);
             }
 
-            dataSets.add(dataSet);
+            dataSets.add(DataUtils.restrictToMeasured(dataSet));
         }
     }
 
@@ -161,12 +164,14 @@ public class LinearFisherModel implements Simulation, TakesData {
         parameters.add("varLow");
         parameters.add("varHigh");
         parameters.add("verbose");
+        parameters.add("coefSymmetric");
         parameters.add("numRuns");
         parameters.add("percentDiscrete");
         parameters.add("numCategories");
         parameters.add("differentGraphs");
         parameters.add("sampleSize");
         parameters.add("intervalBetweenShocks");
+        parameters.add("intervalBetweenRecordings");
         parameters.add("fisherEpsilon");
         return parameters;
     }
