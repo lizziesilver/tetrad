@@ -21,21 +21,23 @@
 
 package edu.cmu.tetrad.cmd;
 
+import edu.cmu.tetrad.algcomparison.statistic.*;
 import edu.cmu.tetrad.bayes.BayesIm;
 import edu.cmu.tetrad.bayes.BayesPm;
 import edu.cmu.tetrad.bayes.MlBayesEstimator;
 import edu.cmu.tetrad.data.*;
-import edu.cmu.tetrad.graph.Dag;
-import edu.cmu.tetrad.graph.Graph;
-import edu.cmu.tetrad.graph.GraphUtils;
-import edu.cmu.tetrad.graph.Node;
+import edu.cmu.tetrad.graph.*;
 import edu.cmu.tetrad.search.*;
+import edu.cmu.tetrad.sem.LargeScaleSimulation;
 import edu.cmu.tetrad.util.RandomUtil;
 import edu.cmu.tetrad.util.TetradLogger;
+import edu.cmu.tetrad.util.TextTable;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Runs several algorithm from Tetrad. Documentation is available
@@ -364,7 +366,7 @@ public final class TetradCmd {
             } else if ("-rfci".equalsIgnoreCase(token)) {
                 this.rfciUsed = true;
             } else if ("-nodsep".equalsIgnoreCase(token)) {
-                this.nodsep = true;            } 
+                this.nodsep = true;            }
             else if ("-silent".equalsIgnoreCase(token)) {
                 this.silent = true;
             } else if ("-condcorr".equalsIgnoreCase(token)) {
@@ -513,6 +515,8 @@ public final class TetradCmd {
             runFofc();
         } else if ("randomDag".equalsIgnoreCase(algorithmName)) {
             printRandomDag();
+        } else if ("testGest".equalsIgnoreCase(algorithmName)) {
+            runGestTest();
         } else {
             TetradLogger.getInstance().reset();
             TetradLogger.getInstance().removeOutputStream(System.out);
@@ -987,6 +991,402 @@ public final class TetradCmd {
 //        throw new IllegalArgumentException("Level must be one of 'Severe', " +
 //                "'Warning', 'Info', 'Config', 'Fine', 'Finer', 'Finest'.");
 //    }
+
+    public void runGestTest() {
+        int[] numNodesArray = {30, 100}; // try 10, 30, 100; and if time elapsed is not too long, try 300, 1000
+        double[] numEdgesFactorArray = {1, 3, 10}; // try numNodes * {1, 1.5, 2}
+        int[] kArray = {2,3,4,5}; // try 2-5; if time elapsed is not too long, try 7-10
+        double[] graphDistanceFactorArray = {0.05, 0.1, 0.2}; // try 0,4,8,12, and then some percent of numEdges * 4
+        int[] sampleSizeArray = {30, 60, 100}; // try numNodes * 0.5, numNodes, numNodes * 2 (with the floor being 100)
+        int maxDegree = 10;
+        int maxIndegree = 10;
+        int maxOutdegree = 10;
+        double[] transferPenaltyArray = {0, 3, 10, 30}; // try 0, 1, 3, 10
+        boolean[] weightTransferBySampleArray = {true, false}; // try true, false
+        boolean[] bumpMinTransferArray = {true, false}; // try true, false
+        boolean[] faithfulnessAssumedArray = {true, false};
+        double[] penaltyDiscountArray = {4}; // try 1, 2, 4, 10
+        // int idNumber = 0;
+        int numRuns = 10;
+
+        String filePath = "/Users/lizzie/Dissertation_code/Evaluation/";
+
+        // calculate and save performance statistics
+        Date date = new Date();
+        AdjacencyPrecision ap = new AdjacencyPrecision();
+        AdjacencyRecall ar = new AdjacencyRecall();
+        ArrowheadPrecision arp = new ArrowheadPrecision();
+        ArrowheadRecall arr = new ArrowheadRecall();
+        MathewsCorrAdj mca = new MathewsCorrAdj();
+        MathewsCorrArrow mcar = new MathewsCorrArrow();
+        F1Adj f1a = new F1Adj();
+        F1Arrow f1ar = new F1Arrow();
+        SHD shd = new SHD();
+
+        try {
+            File dir = new File(filePath);
+            dir.mkdirs();
+            File file = new File(dir, "Comparison.txt");
+            boolean fileExists = file.exists();
+            this.out = new PrintStream(new FileOutputStream(file, true));
+            if (!fileExists) {
+                out.println("Date \talgorithmName \tk \tgraphDistance \tnumNodes \tnumEdges " +
+                        "\tsampleSize \tmaxDegree \tmaxIndegree \tmaxOutdegree \ttransferPenalty " +
+                        "\tweightTransferBySample \tbumpMinTransfer \tpenaltyDiscount \tfaithfulnessAssumed" +
+                        "\tadjacencyPrecision \tadjacencyRecall \tarrowheadPrecision \tarrowheadRecall \tmathewsCorrAdj " +
+                        "\tmathewsCorrArrow \tf1Adj \tf1Arrow \tshd \telapsedTime"// + " \tmisclassificationFile"
+                        );
+            } else {
+                System.out.println("file exists");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        for (int r = 0; r < numRuns; r++) {
+            System.out.println("Run number: " + r);
+            for (int numNodes : numNodesArray) {
+                System.out.println("numNodes: " + numNodes);
+                for (double numEdgesFactor : numEdgesFactorArray) {
+                    int numEdges = (int) Math.round(numEdgesFactor * numNodes);
+                    System.out.println("numEdges: " + numEdges);
+
+                    Graph originalDag = GraphUtils.randomDag(numNodes, 0, numEdges, maxDegree, maxIndegree, maxOutdegree, false);
+
+                    ArrayList<Graph> newDagList = new ArrayList<>();
+                    newDagList.add(originalDag);
+
+                    for (int k : kArray) {
+                        System.out.println("total k: " + k);
+
+                        for (double graphDistanceFactor : graphDistanceFactorArray) {
+                            int graphDistance = (int) Math.round(graphDistanceFactor * numEdges) * 4;
+                            System.out.println("graphDistance: " + graphDistance);
+
+                            for (int j = 0; j < k - 1; j++) {
+                                Graph newDag = new EdgeListGraph(originalDag);
+                                final List<Node> nodes2 = newDag.getNodes();
+                                int SHD = SearchGraphUtils.structuralHammingDistance(newDag, originalDag);
+
+                                while (SHD < graphDistance) {
+
+                                    // add a random forward edge:
+                                    int c1 = RandomUtil.getInstance().nextInt(nodes2.size());
+                                    int c2 = RandomUtil.getInstance().nextInt(nodes2.size());
+
+                                    if (c1 == c2) {
+                                        continue;
+                                    }
+
+                                    if (c1 > c2) {
+                                        int temp = c1;
+                                        c1 = c2;
+                                        c2 = temp;
+                                    }
+
+                                    Node n1 = nodes2.get(c1);
+                                    Node n2 = nodes2.get(c2);
+
+                                    if (newDag.isAdjacentTo(n1, n2)) {
+                                        continue;
+                                    }
+
+                                    final int indegree = newDag.getIndegree(n2);
+                                    final int outdegree = newDag.getOutdegree(n1);
+
+                                    if (((indegree >= maxIndegree) ||
+                                            (outdegree >= maxOutdegree)) ||
+                                            ((newDag.getIndegree(n1) + newDag.getOutdegree(n1) + 1 > maxDegree) ||
+                                                    (newDag.getIndegree(n2) + newDag.getOutdegree(n2) + 1 > maxDegree))) {
+                                        continue;
+                                    }
+
+                                    if (!newDag.isAdjacentTo(n1, n2)) {
+                                        newDag.addDirectedEdge(n1, n2);
+                                    }
+
+                                    // remove a random edge:
+                                    Set<Edge> edges2 = newDag.getEdges();
+                                    Edge e = randomEdge(edges2);
+                                    newDag.removeEdge(e);
+
+                                    // update SHD:
+                                    SHD = SearchGraphUtils.structuralHammingDistance(newDag, originalDag);
+                                }
+
+                                newDagList.add(newDag);
+                            }
+
+                            //GraphConfiguration config = new GraphConfiguration(newDagList);
+
+                            for (int sampleSize : sampleSizeArray) {
+                                System.out.println("sampleSize: " + sampleSize);
+
+                                for (double penaltyDiscount : penaltyDiscountArray) {
+                                    List<Score> scoreList = new ArrayList<>();
+                                    for (int i = 0; i < k; i++) {
+                                        LargeScaleSimulation semSimulator = new LargeScaleSimulation(newDagList.get(i));
+                                        DataSet data = semSimulator.simulateDataFisher(sampleSize);
+                                        SemBicScore score = new SemBicScore(new CovarianceMatrixOnTheFly(data));
+                                        score.setPenaltyDiscount(penaltyDiscount);
+                                        scoreList.add(score);
+                                    }
+
+                                    for (boolean faithfulnessAssumed : faithfulnessAssumedArray) {
+                                        System.out.println("faithfulnessAssumed: " + faithfulnessAssumed);
+
+                                        List<Graph> fgesList = new ArrayList<>();
+                                        List<Graph> trueList = new ArrayList<>();
+
+                                        long fgesStart = System.currentTimeMillis();
+                                        for (int i = 0; i < k; i++) {
+                                            Fges fges = new Fges(scoreList.get(i));
+                                            fges.setFaithfulnessAssumed(faithfulnessAssumed);
+                                            Graph fgesOutput = fges.search();
+                                            fgesList.add(fgesOutput);
+
+                                            Graph truePattern = SearchGraphUtils.patternForDag(newDagList.get(i));
+                                            truePattern = GraphUtils.replaceNodes(truePattern, fgesOutput.getNodes());
+                                            trueList.add(truePattern);
+                                        }
+
+                                        long fgesStop = System.currentTimeMillis();
+                                        long fgesElapsedTime = fgesStop - fgesStart;
+
+                                        GraphConfiguration fgesResults = new GraphConfiguration(fgesList);
+                                        GraphConfiguration trueResults = new GraphConfiguration(trueList);
+
+                                        for (int i = 0; i < k; i++) {
+                                            double adjacencyPrecisionF = ap.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+                                            double adjacencyRecallF = ar.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+                                            double arrowheadPrecisionF = arp.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+                                            double arrowheadRecallF = arr.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+                                            double mathewsCorrAdjF = mca.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+                                            double mathewsCorrArrowF = mcar.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+                                            double f1AdjF = f1a.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+                                            double f1ArrowF = f1ar.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+                                            double shd1F = shd.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+
+                                            // write FGES output to file
+                                            out.println(date +
+                                                    // algorithm and data generation parameters
+                                                    "\t FGES \t" +
+                                                    k + "\t" +
+                                                    graphDistance + "\t" +
+                                                    numNodes + "\t" +
+                                                    numEdges + "\t" +
+                                                    sampleSize + "\t" +
+                                                    maxDegree + "\t" +
+                                                    maxIndegree + "\t" +
+                                                    maxOutdegree + "\t" +
+                                                    "NA" + "\t" +
+                                                    "NA" + "\t" +
+                                                    "NA" + "\t" +
+                                                    penaltyDiscount + "\t" +
+                                                    faithfulnessAssumed + "\t" +
+
+                                                    // performance
+                                                    adjacencyPrecisionF + "\t" +
+                                                    adjacencyRecallF + "\t" +
+                                                    arrowheadPrecisionF + "\t" +
+                                                    arrowheadRecallF + "\t" +
+                                                    mathewsCorrAdjF + "\t" +
+                                                    mathewsCorrArrowF + "\t" +
+                                                    f1AdjF + "\t" +
+                                                    f1ArrowF + "\t" +
+                                                    shd1F + "\t" +
+                                                    fgesElapsedTime //+ "\t" + fgesMisclassificationFilename
+                                            );
+                                        }
+
+                                        for (double transferPenalty : transferPenaltyArray) {
+                                            System.out.println("transferPenalty: " + transferPenalty);
+
+                                            for (boolean weightTransferBySample : weightTransferBySampleArray) {
+                                                System.out.println("weightTransferBySample: " + weightTransferBySample);
+
+                                                for (boolean bumpMinTransfer : bumpMinTransferArray) {
+                                                    System.out.println("bumpMinTransfer: " + bumpMinTransfer);
+
+                                                    Gest gest = new Gest(scoreList, transferPenalty, weightTransferBySample, bumpMinTransfer);
+                                                    gest.setFaithfulnessAssumed(faithfulnessAssumed);
+                                                    gest.setVerbose(true);
+
+                                                    long gestStart = System.currentTimeMillis();
+
+                                                    GraphConfiguration gestResults = gest.search();
+
+                                                    long gestStop = System.currentTimeMillis();
+
+                                                    System.out.println("Elapsed " + (gestStop - gestStart) + " ms");
+                                                    long gestElapsedTime = gestStop - gestStart;
+
+                                                    for (int i = 0; i < k; i++) {
+                                                        gestResults.setGraph(i, GraphUtils.replaceNodes(gestResults.getGraph(i), fgesResults.getGraph(i).getNodes()));
+                                                    }
+
+                                                    /*// rows (on the left) are the estimated edges; columns (marked on top) are the true edges
+                                                    int[][] gestCounts = sumMultiMisclassifications(gestResults, trueResults);
+                                                    System.out.println("GEST results:");
+                                                    System.out.println(countsToMisclassifications(gestCounts));
+                                                    int[][] fgesCounts = sumMultiMisclassifications(fgesResults, trueResults);
+                                                    System.out.println("FGES results:");
+                                                    System.out.println(countsToMisclassifications(fgesCounts));
+*/
+
+                                                    /*String gestMisclassificationFilename = "misclassification_GEST_" + date + "_" + idNumber + ".txt";
+                                                    gestMisclassificationFilename = gestMisclassificationFilename.replace(' ', '_');
+                                                    gestMisclassificationFilename = gestMisclassificationFilename.replace(':', '-');
+                                                    gestMisclassificationFilename = gestMisclassificationFilename.replace('/', '-');
+                                                    String fgesMisclassificationFilename = "misclassification_FGES_" + date + "_" + idNumber + ".txt";
+                                                    fgesMisclassificationFilename = fgesMisclassificationFilename.replace(' ', '_');
+                                                    fgesMisclassificationFilename = fgesMisclassificationFilename.replace(':', '-');
+                                                    fgesMisclassificationFilename = fgesMisclassificationFilename.replace('/', '-');
+*/
+                                                    //idNumber++;
+
+                                                    for (int i = 0; i < k; i++) {
+                                                        double adjacencyPrecision = ap.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+                                                        double adjacencyRecall = ar.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+                                                        double arrowheadPrecision = arp.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+                                                        double arrowheadRecall = arr.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+                                                        double mathewsCorrAdj = mca.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+                                                        double mathewsCorrArrow = mcar.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+                                                        double f1Adj = f1a.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+                                                        double f1Arrow = f1ar.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+                                                        double shd1 = shd.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+
+                                                        // write GEST output to file
+                                                        out.println(date +
+
+                                                                // algorithm and data generation parameters
+                                                                "\t GEST \t" +
+                                                                k + "\t" +
+                                                                graphDistance + "\t" +
+                                                                numNodes + "\t" +
+                                                                numEdges + "\t" +
+                                                                sampleSize + "\t" +
+                                                                maxDegree + "\t" +
+                                                                maxIndegree + "\t" +
+                                                                maxOutdegree + "\t" +
+                                                                transferPenalty + "\t" +
+                                                                weightTransferBySample + "\t" +
+                                                                bumpMinTransfer + "\t" +
+                                                                penaltyDiscount + "\t" +
+                                                                faithfulnessAssumed + "\t" +
+
+                                                                // performance
+                                                                adjacencyPrecision + "\t" +
+                                                                adjacencyRecall + "\t" +
+                                                                arrowheadPrecision + "\t" +
+                                                                arrowheadRecall + "\t" +
+                                                                mathewsCorrAdj + "\t" +
+                                                                mathewsCorrArrow + "\t" +
+                                                                f1Adj + "\t" +
+                                                                f1Arrow + "\t" +
+                                                                shd1 + "\t" +
+                                                                gestElapsedTime // + "\t" + gestMisclassificationFilename
+                                                        );
+
+                                                    }
+
+                                                    /*//Misclassfication Matrix (saved to a separate file because it's not a single number; so put that filename in the stats file)
+                                                    try {
+                                                        File dir = new File(filePath);
+                                                        dir.mkdirs();
+                                                        // GEST
+                                                        File misclassificationFileGest = new File(dir, gestMisclassificationFilename);
+                                                        if (!misclassificationFileGest.exists()) {
+                                                            misclassificationFileGest.createNewFile();
+                                                        }
+                                                        FileWriter fw = new FileWriter(misclassificationFileGest.getAbsoluteFile());
+                                                        BufferedWriter bw = new BufferedWriter(fw);
+                                                        bw.write(countsToMisclassifications(gestCounts) + "\n");
+                                                        bw.close();
+                                                        // FGES
+                                                        File misclassificationFileFges = new File(dir, fgesMisclassificationFilename);
+                                                        if (!misclassificationFileFges.exists()) {
+                                                            misclassificationFileFges.createNewFile();
+                                                        }
+                                                        FileWriter fw2 = new FileWriter(misclassificationFileFges.getAbsoluteFile());
+                                                        BufferedWriter bw2 = new BufferedWriter(fw2);
+                                                        bw2.write(countsToMisclassifications(fgesCounts) + "\n");
+                                                        bw2.close();
+                                                    } catch (Exception e) {
+                                                        throw new RuntimeException(e);
+                                                    }*/
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static int[][] sumMultiMisclassifications(GraphConfiguration estGraphs, GraphConfiguration trueGraphs) {
+        int[][] counts = GraphUtils.edgeMisclassificationCounts(estGraphs.getGraph(0), trueGraphs.getGraph(0), false);
+        int row = counts.length;
+        int col = counts[0].length;
+        for (int i = 1; i < trueGraphs.getNumGraphs(); i++) {
+            int[][] addCounts = GraphUtils.edgeMisclassificationCounts(estGraphs.getGraph(i), trueGraphs.getGraph(i), false);
+            for (int r = 0; r < row; r++) {
+                for (int c = 0; c < col; c++) {
+                    counts[r][c] += addCounts[r][c];
+                }
+            }
+        }
+        return counts;
+    }
+
+
+    public static String countsToMisclassifications(int[][] counts) {
+        StringBuilder builder = new StringBuilder();
+
+        TextTable table2 = new TextTable(9, 7);
+
+        table2.setToken(1, 0, "---");
+        table2.setToken(2, 0, "o-o");
+        table2.setToken(3, 0, "o->");
+        table2.setToken(4, 0, "<-o");
+        table2.setToken(5, 0, "-->");
+        table2.setToken(6, 0, "<--");
+        table2.setToken(7, 0, "<->");
+        table2.setToken(8, 0, "null");
+        table2.setToken(0, 1, "---");
+        table2.setToken(0, 2, "o-o");
+        table2.setToken(0, 3, "o->");
+        table2.setToken(0, 4, "-->");
+        table2.setToken(0, 5, "<->");
+        table2.setToken(0, 6, "null");
+
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 6; j++) {
+                if (i == 7 && j == 5) table2.setToken(i + 1, j + 1, "*");
+                else table2.setToken(i + 1, j + 1, "" + counts[i][j]);
+            }
+        }
+
+        builder.append("\n").append(table2.toString());
+        return builder.toString();
+    }
+
+    public static Edge randomEdge(Set<Edge> edgeSet) {
+        int num = RandomUtil.getInstance().nextInt(edgeSet.size());
+        for (Edge e : edgeSet) {
+            if (--num < 0) {
+                return e;
+            }
+        }
+        throw new AssertionError();
+    }
+
+
+
 
     public static void main(final String[] argv) {
         new TetradCmd(argv);

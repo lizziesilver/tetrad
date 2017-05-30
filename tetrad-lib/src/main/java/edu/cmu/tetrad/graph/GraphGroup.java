@@ -54,6 +54,8 @@ public interface GraphGroup {
      */
     void addGraph(Graph g);
 
+    boolean equals(Object o);
+
 }
 
 

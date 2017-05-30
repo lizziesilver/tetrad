@@ -87,9 +87,9 @@
                 <tocitem text="WFGES" target="wfges"/>
 
                 <tocitem text="BDeu Score" target="bdeu"/>
-                <tocitem text="Conditional Gaussian BIC score" target="conditional_gaussian_bic"/>
-                <tocitem text="Discrete BIC score" target="discrete_bic"/>
-                <tocitem text="SEM BIC score" target="sem_bic"/>
+                <tocitem text="Conditional Gaussian BIC scoreList" target="conditional_gaussian_bic"/>
+                <tocitem text="Discrete BIC scoreList" target="discrete_bic"/>
+                <tocitem text="SEM BIC scoreList" target="sem_bic"/>
                 <tocitem text="Conditional Correlation Test" target="conditional_correlation"/>
                 <tocitem text="Chi Square Test" target="chisquare"/>
                 <tocitem text="G Square Test" target="gsquare"/>
