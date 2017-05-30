@@ -29,6 +29,7 @@ import edu.cmu.tetrad.algcomparison.independence.IndependenceWrapper;
 import edu.cmu.tetrad.algcomparison.score.ScoreWrapper;
 import edu.cmu.tetrad.algcomparison.simulation.LinearFisherModel;
 import edu.cmu.tetrad.algcomparison.simulation.Simulation;
+import edu.cmu.tetrad.algcomparison.statistic.*;
 import edu.cmu.tetrad.bayes.BayesIm;
 import edu.cmu.tetrad.bayes.BayesPm;
 import edu.cmu.tetrad.bayes.MlBayesIm;
@@ -59,12 +60,13 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Joseph Ramsey
  */
-public class TestFges {
+public class TestGest {
 
 
     private PrintStream out = System.out;
 //    private OutputStream out =
 
+    // todo add
     //    @Test
     public void explore1() {
         RandomUtil.getInstance().setSeed(1450184147770L);
@@ -137,7 +139,7 @@ public class TestFges {
 
     }
 
-    @Test
+    //@Test
     public void explore2() {
         RandomUtil.getInstance().setSeed(1457220623122L);
 
@@ -199,7 +201,7 @@ public class TestFges {
     }
 
 
-    @Test
+    //@Test
     public void testExplore3() {
         Graph graph = GraphConverter.convert("A-->B,A-->C,B-->D,C-->D");
         Fges fges = new Fges(new GraphScore(graph));
@@ -207,7 +209,7 @@ public class TestFges {
         assertEquals(SearchGraphUtils.patternForDag(graph), pattern);
     }
 
-    @Test
+    //@Test
     public void testExplore4() {
         Graph graph = GraphConverter.convert("A-->B,A-->C,A-->D,B-->E,C-->E,D-->E");
         Fges fges = new Fges(new GraphScore(graph));
@@ -215,7 +217,7 @@ public class TestFges {
         assertEquals(SearchGraphUtils.patternForDag(graph), pattern);
     }
 
-    @Test
+    //@Test
     public void testExplore5() {
         Graph graph = GraphConverter.convert("A-->B,A-->C,A-->D,A->E,B-->F,C-->F,D-->F,E-->F");
         Fges fges = new Fges(new GraphScore(graph));
@@ -224,9 +226,11 @@ public class TestFges {
         assertEquals(SearchGraphUtils.patternForDag(graph), pattern);
     }
 
+    // actually GEST
+    // @Test
+    public void testFromGraphSimpleGest() {
 
-    @Test
-    public void testFromGraphSimpleFges() {
+        //this.out = System.out;
 
         // This may fail if faithfulness is assumed but should pass if not.
 
@@ -246,16 +250,184 @@ public class TestFges {
         g.addDirectedEdge(x4, x2);
         g.addDirectedEdge(x4, x3);
 
-        Graph pattern1 = new Pc(new IndTestDSep(g)).search();
-        Fges fges = new Fges(new GraphScore(g));
-        fges.setFaithfulnessAssumed(true);
-        Graph pattern2 = fges.search();
+        Graph h = new EdgeListGraph();
+        h.addNode(x1);
+        h.addNode(x2);
+        h.addNode(x3);
+        h.addNode(x4);
 
-//        System.out.println(pattern1);
-//        System.out.println(pattern2);
+        h.addDirectedEdge(x1, x2);
+        h.addDirectedEdge(x1, x3);
+        h.addDirectedEdge(x4, x2);
 
-        assertEquals(pattern1, pattern2);
+        List<Score> scoreList = new ArrayList<>();
+        scoreList.add(new GraphScore(g));
+        scoreList.add(new GraphScore(h));
+
+        List trueResultList = new ArrayList<Graph>();
+        trueResultList.add(new Pc(new IndTestDSep(g)).search());
+        trueResultList.add(new Pc(new IndTestDSep(h)).search());
+        GraphConfiguration trueResult = new GraphConfiguration(trueResultList);
+
+        Gest gest = new Gest(scoreList);
+        gest.setFaithfulnessAssumed(true);
+        gest.setVerbose(true);
+        GraphConfiguration pattern2 = gest.search();
+
+        //System.out.println(pattern2);
+
+        assertEquals(trueResult, pattern2);
     }
+
+    // actually GEST
+    // @Test
+    public void testFromGraphSimpleGest2() {
+
+        Node x1 = new GraphNode("X1");
+        Node x2 = new GraphNode("X2");
+        Node x3 = new GraphNode("X3");
+        Node x4 = new GraphNode("X4");
+
+        List<Node> nodeList = new ArrayList<>();
+        nodeList.add(x1);
+        nodeList.add(x2);
+        nodeList.add(x3);
+        nodeList.add(x4);
+
+        Graph h = new EdgeListGraph(nodeList);
+        h.addDirectedEdge(x1, x2);
+        h.addDirectedEdge(x4, x3);
+        h.addDirectedEdge(x4, x2);
+
+        Graph g = new EdgeListGraph(h);
+        g.addDirectedEdge(x1, x3);
+
+        Graph j = new EdgeListGraph(h);
+        j.addDirectedEdge(x2, x3);
+
+        Graph k = new EdgeListGraph(h);
+        k.addDirectedEdge(x1, x3);
+        k.addDirectedEdge(x2, x3);
+
+        List<Score> scoreList = new ArrayList<>();
+        scoreList.add(new GraphScore(g));
+        scoreList.add(new GraphScore(h));
+        scoreList.add(new GraphScore(j));
+        scoreList.add(new GraphScore(k));
+
+        List<Graph> trueResultList = new ArrayList<>();
+        trueResultList.add(new Pc(new IndTestDSep(g)).search());
+        trueResultList.add(new Pc(new IndTestDSep(h)).search());
+        trueResultList.add(new Pc(new IndTestDSep(j)).search());
+        trueResultList.add(new Pc(new IndTestDSep(k)).search());
+        GraphConfiguration trueResult = new GraphConfiguration(trueResultList);
+
+        Gest gest = new Gest(scoreList);
+        gest.setFaithfulnessAssumed(true);
+        gest.setVerbose(true);
+        GraphConfiguration pattern2 = gest.search();
+
+        assertEquals(trueResult, pattern2);
+    }
+
+    // actually GEST
+    //@Test
+    public void testFromDataSimpleGraphGest() {
+
+        //this.out = System.out;
+
+        // This may fail if faithfulness is assumed but should pass if not.
+
+        Node x1 = new GraphNode("X1");
+        Node x2 = new GraphNode("X2");
+        Node x3 = new GraphNode("X3");
+        Node x4 = new GraphNode("X4");
+
+        List<Node> nodeList = new ArrayList<>();
+        nodeList.add(x1);
+        nodeList.add(x2);
+        nodeList.add(x3);
+        nodeList.add(x4);
+
+        Graph h = new EdgeListGraph(nodeList);
+        h.addDirectedEdge(x1, x2);
+        h.addDirectedEdge(x4, x3);
+        h.addDirectedEdge(x4, x2);
+
+        Graph g = new EdgeListGraph(h);
+        g.addDirectedEdge(x1, x3);
+
+        Graph j = new EdgeListGraph(h);
+        j.addDirectedEdge(x2, x3);
+
+        Graph k = new EdgeListGraph(h);
+        k.addDirectedEdge(x1, x3);
+        k.addDirectedEdge(x2, x3);
+
+        int sampleSize = 100;
+
+        List<Graph> graphList = new ArrayList<>();
+        graphList.add(g);
+        graphList.add(h);
+        graphList.add(j);
+        graphList.add(k);
+
+        List<Score> scoreList = new ArrayList<>();
+        for (int i = 0; i < 4; i++){
+            LargeScaleSimulation semSimulator = new LargeScaleSimulation(graphList.get(i));
+            DataSet data = semSimulator.simulateDataFisher(sampleSize);
+            SemBicScore score = new SemBicScore(new CovarianceMatrixOnTheFly(data));
+            score.setPenaltyDiscount(4);
+            scoreList.add(score);
+        }
+
+        Gest gest = new Gest(scoreList, 10, true, true);
+        gest.setFaithfulnessAssumed(true);
+        gest.setVerbose(true);
+
+        long start = System.currentTimeMillis();
+
+        GraphConfiguration gestResults = gest.search();
+
+        long stop = System.currentTimeMillis();
+
+        System.out.println("Elapsed " + (stop - start) + " ms");
+
+        List<Graph> fgesList = new ArrayList<>();
+        List<Graph> trueList = new ArrayList<>();
+
+        for (int i = 0; i < 4; i++){
+            Fges fges = new Fges(scoreList.get(i));
+            Graph fgesOutput = fges.search();
+            fgesOutput = GraphUtils.replaceNodes(fgesOutput, gestResults.getGraph(i).getNodes());
+            fgesList.add(fgesOutput);
+
+            Graph truePattern = SearchGraphUtils.patternForDag(graphList.get(i));
+            truePattern = GraphUtils.replaceNodes(truePattern, gestResults.getGraph(i).getNodes());
+            trueList.add(truePattern);
+        }
+
+        GraphConfiguration fgesResults = new GraphConfiguration(fgesList);
+        GraphConfiguration trueResults = new GraphConfiguration(trueList);
+
+        for (int i = 0; i < 4; i++) {
+            System.out.println("\nGEST result on graph " + (i+1) + ":");
+            System.out.println(MisclassificationUtils.edgeMisclassifications(gestResults.getGraph(i), trueResults.getGraph(i)));
+            System.out.println("\nFGES result on graph " + (i+1) + ":");
+            System.out.println(MisclassificationUtils.edgeMisclassifications(fgesResults.getGraph(i), trueResults.getGraph(i)));
+        }
+
+        //System.out.println(pattern2);
+        //assertEquals(truePatterns, fgesResultsConfig);
+        //assertEquals(pattern2, fgesResultsConfig);
+        //assertEquals(trueResults, gestResults);
+    }
+
+    // [done, implemented as an option flagged "bumpMinTransfer"] use all arrows, even with negative bump
+    // todo compare GEST with FGES, with the same params and sample size
+    // todo implement graph modification grammar in tetrad, use for large-scale eval
+    // todo adapt clarkTest, testSearch1:5, testCites, explore2, testExplore3:5, testFromGraphSimpleFgesMb, testPcStable2, testFromGraph, testFromData, testBestAlgorithms,
+
 
     //@Test
     public void testFromGraphSimpleFgesMb() {
@@ -289,6 +461,7 @@ public class TestFges {
         assertEquals(pattern1, pattern2);
     }
 
+    // markov blanket
     //@Test
     public void testFgesMbFromGraph() {
         int numNodes = 20;
@@ -357,7 +530,7 @@ public class TestFges {
         }
     }
 
-    @Test
+    //@Test
     public void clarkTest() {
         RandomGraph randomGraph = new RandomForward();
 
@@ -487,7 +660,7 @@ public class TestFges {
      * Runs the PC algorithm on the graph X1 --> X2, X1 --> X3, X2 --> X4, X3 --> X4. Should produce X1 -- X2, X1 -- X3,
      * X2 --> X4, X3 --> X4.
      */
-    @Test
+    //@Test
     public void testSearch1() {
         checkSearch("X1-->X2,X1-->X3,X2-->X4,X3-->X4",
                 "X1---X2,X1---X3,X2-->X4,X3-->X4");
@@ -497,7 +670,7 @@ public class TestFges {
      * Runs the PC algorithm on the graph X1 --> X2, X1 --> X3, X2 --> X4, X3 --> X4. Should produce X1 -- X2, X1 -- X3,
      * X2 --> X4, X3 --> X4.
      */
-    @Test
+    //@Test
     public void testSearch2() {
         checkSearch("X1-->X2,X1-->X3,X2-->X4,X3-->X4",
                 "X1---X2,X1---X3,X2-->X4,X3-->X4");
@@ -506,7 +679,8 @@ public class TestFges {
     /**
      * This will fail if the orientation loop doesn't continue after the first orientation.
      */
-    @Test
+    // todo add
+    //@Test
     public void testSearch3() {
         checkSearch("A-->D,A-->B,B-->D,C-->D,D-->E",
                 "A-->D,A---B,B-->D,C-->D,D-->E");
@@ -515,7 +689,7 @@ public class TestFges {
     /**
      * This will fail if the orientation loop doesn't continue after the first orientation.
      */
-    @Test
+    //@Test
     public void testSearch4() {
         IKnowledge knowledge = new Knowledge2();
         knowledge.setForbidden("B", "D");
@@ -526,7 +700,7 @@ public class TestFges {
                 knowledge);
     }
 
-    @Test
+    //@Test
     public void testSearch5() {
         IKnowledge knowledge = new Knowledge2();
         knowledge.setTier(1, Collections.singletonList("A"));
@@ -535,7 +709,7 @@ public class TestFges {
         checkWithKnowledge("A-->B", "A-->B", knowledge);
     }
 
-    @Test
+    //@Test
     public void testCites() {
         String citesString = "164\n" +
                 "ABILITY\tGPQ\tPREPROD\tQFJ\tSEX\tCITES\tPUBS\n" +
@@ -661,7 +835,7 @@ public class TestFges {
         assertEquals(answer, result);
     }
 
-    @Test
+    //@Test
     public void testPcStable2() {
         RandomUtil.getInstance().setSeed(1450030184196L);
         List<Node> nodes = new ArrayList<>();
@@ -693,7 +867,7 @@ public class TestFges {
     }
 
 
-    @Test
+    //@Test
     public void testFromGraph() {
         int numNodes = 20;
         int numIterations = 20;
@@ -710,7 +884,7 @@ public class TestFges {
         }
     }
 
-    @Test
+    //@Test
     public void testFromData() {
         int numNodes = 100;
         int numLatents = 0;
@@ -900,6 +1074,347 @@ public class TestFges {
 
         DataSet ds = im.simulateDataFisher(samps);
         return MixedUtils.makeMixedData(ds, nd);
+    }
+
+    //@Test
+    public void testGestAlgorithmComparison() {
+        int k = 4; // try 2-6; if time elapsed is not too long, try 7-10
+        int graphDistance = 8; // try 0,4,8,12, and then some percent of numEdges * 4
+        int numEdges = 45; // try numNodes, numNodes * 1.5, numNodes * 2
+        int numNodes = 35; // try 10, 30, 100; and if time elapsed is not too long, try 300, 1000
+        int sampleSize = 150; // try numNodes * 0.5, numNodes, numNodes * 2 (with the floor being 100)
+        int maxDegree = 10;
+        int maxIndegree = 10;
+        int maxOutdegree = 10;
+        double transferPenalty = 10; // try 0, 1, 3, 10, 30
+        boolean weightTransferBySample = true; // try true, false
+        boolean bumpMinTransfer = true; // try true, false
+        double penaltyDiscount = 4; // try 1, 2, 4, 10
+
+        String filePath = "/Users/lizzie/Dissertation_code/Evaluation/";
+
+        try {
+            File dir = new File(filePath);
+            dir.mkdirs();
+            File file = new File(dir, "Comparison.txt");
+            boolean fileExists = file.exists();
+            this.out = new PrintStream(new FileOutputStream(file, true));
+            if (!fileExists) {
+                out.println("Date \talgorithmName \tk \tgraphDistance \tnumNodes \tnumEdges " +
+                        "\tsampleSize \tmaxDegree \tmaxIndegree \tmaxOutdegree \ttransferPenalty " +
+                        "\tweightTransferBySample \tbumpMinTransfer \tpenaltyDiscount \t" +
+                        "adjacencyPrecision \tadjacencyRecall \tarrowheadPrecision \tarrowheadRecall \tmathewsCorrAdj " +
+                        "\tmathewsCorrArrow \tf1Adj \tf1Arrow \tshd \telapsedTime \tmisclassificationFile");
+            } else {
+                System.out.println("file exists");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+
+        Graph originalDag = GraphUtils.randomDag(numNodes, 0, numEdges, maxDegree, maxIndegree, maxOutdegree, false);
+
+        ArrayList<Graph> newDagList = new ArrayList<>();
+        newDagList.add(originalDag);
+
+        for (int j = 0; j < k - 1; j++) {
+            Graph newDag = new EdgeListGraph(originalDag);
+            final List<Node> nodes2 = newDag.getNodes();
+            int SHD = SearchGraphUtils.structuralHammingDistance(newDag, originalDag);
+
+            while (SHD < graphDistance) {
+
+                // add a random forward edge:
+                int c1 = RandomUtil.getInstance().nextInt(nodes2.size());
+                int c2 = RandomUtil.getInstance().nextInt(nodes2.size());
+
+                if (c1 == c2) {
+                    continue;
+                }
+
+                if (c1 > c2) {
+                    int temp = c1;
+                    c1 = c2;
+                    c2 = temp;
+                }
+
+                Node n1 = nodes2.get(c1);
+                Node n2 = nodes2.get(c2);
+
+                if (newDag.isAdjacentTo(n1, n2)) {
+                    continue;
+                }
+
+                final int indegree = newDag.getIndegree(n2);
+                final int outdegree = newDag.getOutdegree(n1);
+
+                if (((indegree >= maxIndegree) ||
+                        (outdegree >= maxOutdegree)) ||
+                        ((newDag.getIndegree(n1) + newDag.getOutdegree(n1) + 1 > maxDegree) ||
+                                (newDag.getIndegree(n2) + newDag.getOutdegree(n2) + 1 > maxDegree))) {
+                    continue;
+                }
+
+                if (!newDag.isAdjacentTo(n1, n2)) {
+                    newDag.addDirectedEdge(n1, n2);
+                }
+
+                // remove a random edge:
+                Set<Edge> edges2 = newDag.getEdges();
+                Edge e = randomEdge(edges2);
+                newDag.removeEdge(e);
+
+                // update SHD:
+                SHD = SearchGraphUtils.structuralHammingDistance(newDag, originalDag);
+            }
+
+            newDagList.add(newDag);
+        }
+
+        //GraphConfiguration config = new GraphConfiguration(newDagList);
+
+        List<Score> scoreList = new ArrayList<>();
+        for (int i = 0; i < k; i++){
+            LargeScaleSimulation semSimulator = new LargeScaleSimulation(newDagList.get(i));
+            DataSet data = semSimulator.simulateDataFisher(sampleSize);
+            SemBicScore score = new SemBicScore(new CovarianceMatrixOnTheFly(data));
+            score.setPenaltyDiscount(penaltyDiscount);
+            scoreList.add(score);
+        }
+
+        Gest gest = new Gest(scoreList, transferPenalty, weightTransferBySample, bumpMinTransfer);
+        gest.setFaithfulnessAssumed(true);
+        gest.setVerbose(true);
+
+        long gestStart = System.currentTimeMillis();
+
+        GraphConfiguration gestResults = gest.search();
+
+        long gestStop = System.currentTimeMillis();
+
+        System.out.println("Elapsed " + (gestStop - gestStart) + " ms");
+        long gestElapsedTime = gestStop - gestStart;
+
+        List<Graph> fgesList = new ArrayList<>();
+        List<Graph> trueList = new ArrayList<>();
+
+        long fgesStart = System.currentTimeMillis();
+        for (int i = 0; i < k; i++){
+            Fges fges = new Fges(scoreList.get(i));
+            Graph fgesOutput = fges.search();
+            fgesOutput = GraphUtils.replaceNodes(fgesOutput, gestResults.getGraph(i).getNodes());
+            fgesList.add(fgesOutput);
+        }
+        long fgesStop = System.currentTimeMillis();
+        long fgesElapsedTime = fgesStop - fgesStart;
+
+        for (int i = 0; i < k; i++) {
+            Graph truePattern = SearchGraphUtils.patternForDag(newDagList.get(i));
+            truePattern = GraphUtils.replaceNodes(truePattern, gestResults.getGraph(i).getNodes());
+            trueList.add(truePattern);
+        }
+
+        GraphConfiguration fgesResults = new GraphConfiguration(fgesList);
+        GraphConfiguration trueResults = new GraphConfiguration(trueList);
+
+        // rows (on the left) are the estimated edges; columns (marked on top) are the true edges
+        int[][] gestCounts = sumMultiMisclassifications(gestResults, trueResults);
+        System.out.println("GEST results:");
+        System.out.println(countsToMisclassifications(gestCounts));
+        int[][] fgesCounts = sumMultiMisclassifications(fgesResults, trueResults);
+        System.out.println("FGES results:");
+        System.out.println(countsToMisclassifications(fgesCounts));
+
+        // calculate and save performance statistics
+        Date date = new Date();
+        AdjacencyPrecision ap = new AdjacencyPrecision();
+        AdjacencyRecall ar = new AdjacencyRecall();
+        ArrowheadPrecision arp = new ArrowheadPrecision();
+        ArrowheadRecall arr = new ArrowheadRecall();
+        MathewsCorrAdj mca = new MathewsCorrAdj();
+        MathewsCorrArrow mcar = new MathewsCorrArrow();
+        F1Adj f1a = new F1Adj();
+        F1Arrow f1ar = new F1Arrow();
+        SHD shd = new SHD();
+        String gestMisclassificationFilename = "misclassification_GEST_" + date + ".txt";
+        gestMisclassificationFilename = gestMisclassificationFilename.replace(' ', '_');
+        gestMisclassificationFilename = gestMisclassificationFilename.replace(':', '-');
+        gestMisclassificationFilename = gestMisclassificationFilename.replace('/', '-');
+        String fgesMisclassificationFilename = "misclassification_FGES_" + date + ".txt";
+        fgesMisclassificationFilename = fgesMisclassificationFilename.replace(' ', '_');
+        fgesMisclassificationFilename = fgesMisclassificationFilename.replace(':', '-');
+        fgesMisclassificationFilename = fgesMisclassificationFilename.replace('/', '-');
+
+        for (int i = 0; i < k; i++){
+            double adjacencyPrecision = ap.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+            double adjacencyRecall = ar.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+            double arrowheadPrecision = arp.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+            double arrowheadRecall = arr.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+            double mathewsCorrAdj = mca.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+            double mathewsCorrArrow = mcar.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+            double f1Adj = f1a.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+            double f1Arrow = f1ar.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+            double shd1 = shd.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
+
+            // write GEST output to file
+            out.println(date +
+
+                    // algorithm and data generation parameters
+                    "\t GEST \t" +
+                    k + "\t" +
+                    graphDistance + "\t" +
+                    numNodes + "\t" +
+                    numEdges + "\t" +
+                    sampleSize + "\t" +
+                    maxDegree + "\t" +
+                    maxIndegree + "\t" +
+                    maxOutdegree + "\t" +
+                    transferPenalty + "\t" +
+                    weightTransferBySample + "\t" +
+                    bumpMinTransfer + "\t" +
+                    penaltyDiscount + "\t" +
+
+                    // performance
+                    adjacencyPrecision + "\t" +
+                    adjacencyRecall + "\t" +
+                    arrowheadPrecision + "\t" +
+                    arrowheadRecall + "\t" +
+                    mathewsCorrAdj + "\t" +
+                    mathewsCorrArrow + "\t" +
+                    f1Adj + "\t" +
+                    f1Arrow + "\t" +
+                    shd1 + "\t" +
+                    gestElapsedTime + "\t" +
+                    gestMisclassificationFilename
+            );
+
+            double adjacencyPrecisionF = ap.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+            double adjacencyRecallF = ar.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+            double arrowheadPrecisionF = arp.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+            double arrowheadRecallF = arr.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+            double mathewsCorrAdjF = mca.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+            double mathewsCorrArrowF = mcar.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+            double f1AdjF = f1a.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+            double f1ArrowF = f1ar.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+            double shd1F = shd.getValue(trueResults.getGraph(i), fgesResults.getGraph(i));
+
+            // write FGES output to file
+            out.println(date +
+
+                    // algorithm and data generation parameters
+                    "\t FGES \t" +
+                    k + "\t" +
+                    graphDistance + "\t" +
+                    numNodes + "\t" +
+                    numEdges + "\t" +
+                    sampleSize + "\t" +
+                    maxDegree + "\t" +
+                    maxIndegree + "\t" +
+                    maxOutdegree + "\t" +
+                    transferPenalty + "\t" +
+                    weightTransferBySample + "\t" +
+                    bumpMinTransfer + "\t" +
+                    penaltyDiscount + "\t" +
+
+                    // performance
+                    adjacencyPrecisionF + "\t" +
+                    adjacencyRecallF + "\t" +
+                    arrowheadPrecisionF + "\t" +
+                    arrowheadRecallF + "\t" +
+                    mathewsCorrAdjF + "\t" +
+                    mathewsCorrArrowF + "\t" +
+                    f1AdjF + "\t" +
+                    f1ArrowF + "\t" +
+                    shd1F + "\t" +
+                    fgesElapsedTime + "\t" +
+                    fgesMisclassificationFilename
+            );
+
+        }
+
+        //Misclassfication Matrix (saved to a separate file because it's not a single number; so put that filename in the stats file)
+        try {
+            File dir = new File(filePath);
+            dir.mkdirs();
+            // GEST
+            File misclassificationFileGest = new File(dir, gestMisclassificationFilename);
+            if (!misclassificationFileGest.exists()) {
+                misclassificationFileGest.createNewFile();
+            }
+            FileWriter fw = new FileWriter(misclassificationFileGest.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(countsToMisclassifications(gestCounts) + "\n");
+            bw.close();
+            // FGES
+            File misclassificationFileFges = new File(dir, fgesMisclassificationFilename);
+            if (!misclassificationFileFges.exists()) {
+                misclassificationFileFges.createNewFile();
+            }
+            FileWriter fw2 = new FileWriter(misclassificationFileFges.getAbsoluteFile());
+            BufferedWriter bw2 = new BufferedWriter(fw2);
+            bw2.write(countsToMisclassifications(fgesCounts) + "\n");
+            bw2.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static int[][] sumMultiMisclassifications(GraphConfiguration estGraphs, GraphConfiguration trueGraphs) {
+        int[][] counts = GraphUtils.edgeMisclassificationCounts(estGraphs.getGraph(0), trueGraphs.getGraph(0), false);
+        int row = counts.length;
+        int col = counts[0].length;
+        for (int i = 1; i < trueGraphs.getNumGraphs(); i++) {
+            int[][] addCounts = GraphUtils.edgeMisclassificationCounts(estGraphs.getGraph(i), trueGraphs.getGraph(i), false);
+            for (int r = 0; r < row; r++) {
+                for (int c = 0; c < col; c++) {
+                    counts[r][c] += addCounts[r][c];
+                }
+            }
+        }
+        return counts;
+    }
+
+
+    public static String countsToMisclassifications(int[][] counts) {
+        StringBuilder builder = new StringBuilder();
+
+        TextTable table2 = new TextTable(9, 7);
+
+        table2.setToken(1, 0, "---");
+        table2.setToken(2, 0, "o-o");
+        table2.setToken(3, 0, "o->");
+        table2.setToken(4, 0, "<-o");
+        table2.setToken(5, 0, "-->");
+        table2.setToken(6, 0, "<--");
+        table2.setToken(7, 0, "<->");
+        table2.setToken(8, 0, "null");
+        table2.setToken(0, 1, "---");
+        table2.setToken(0, 2, "o-o");
+        table2.setToken(0, 3, "o->");
+        table2.setToken(0, 4, "-->");
+        table2.setToken(0, 5, "<->");
+        table2.setToken(0, 6, "null");
+
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 6; j++) {
+                if (i == 7 && j == 5) table2.setToken(i + 1, j + 1, "*");
+                else table2.setToken(i + 1, j + 1, "" + counts[i][j]);
+            }
+        }
+
+        builder.append("\n").append(table2.toString());
+        return builder.toString();
+    }
+
+    public static Edge randomEdge(Set<Edge> edgeSet) {
+        int num = RandomUtil.getInstance().nextInt(edgeSet.size());
+        for (Edge e : edgeSet) {
+            if (--num < 0) {
+                return e;
+            }
+        }
+        throw new AssertionError();
     }
 
     //    @Test
@@ -1374,7 +1889,7 @@ public class TestFges {
     }
 
     public static void main(String... args) {
-        new TestFges().testBestAlgorithms();
+        new TestGest().testGestAlgorithmComparison();
     }
 }
 

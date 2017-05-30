@@ -39,13 +39,13 @@
 </p>
 <p>
 
-    tsGFCI uses a BIC score to search for a skeleton. Thus, the only user-specified parameter is an
+    tsGFCI uses a BIC scoreList to search for a skeleton. Thus, the only user-specified parameter is an
 
-    optional <em>penalty score</em> to bias the search in favor of more sparse models. See the description of
+    optional <em>penalty scoreList</em> to bias the search in favor of more sparse models. See the description of
 
-    the GES algorithm for discussion of the penalty score. For the traditional definition of the BIC
+    the GES algorithm for discussion of the penalty scoreList. For the traditional definition of the BIC
 
-    score, set the penalty to 1.0. The orientation rules are the same as for FCI.
+    scoreList, set the penalty to 1.0. The orientation rules are the same as for FCI.
 </p>
 <p>
 
@@ -57,11 +57,11 @@
 
     Also, it will assume that the causal structure is the same across time, so that if the edge between
 
-    X1 and X2 is removed because this increases the BIC score, then also the edge between X1:1
+    X1 and X2 is removed because this increases the BIC scoreList, then also the edge between X1:1
 
     and X2:1 is removed, and so on for additional lags if they exist. When some edge is removed as
 
-    the result of a score increase, all similar (or ?homologous?) edges are also removed.
+    the result of a scoreList increase, all similar (or ?homologous?) edges are also removed.
 </p>
 <p>
     References:
