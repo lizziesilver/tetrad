@@ -77,6 +77,16 @@ public final class TetradCmd {
     private boolean silent = false;
     private boolean useConditionalCorrelation = false;
 
+    // Gest simulation parameters:
+    private int[] numNodesArray = {30};
+    private double[] numEdgesFactorArray = {1};
+    private int[] kArray = {3};
+    private double[] graphDistanceFactorArray = {0.1};
+    private int[] sampleSizeArray = {100};
+    private double[] transferPenaltyArray = {3};
+    private double[] penaltyDiscountArray = {4};
+    private int numRuns = 10;
+
     public TetradCmd(String[] argv) {
         readArguments(new StringArrayTokenizer(argv));
 
@@ -371,6 +381,62 @@ public final class TetradCmd {
                 this.silent = true;
             } else if ("-condcorr".equalsIgnoreCase(token)) {
                 this.useConditionalCorrelation = true;
+            } else if ("-numNodesArray".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.numNodesArray = stringToIntArray(argument);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("numNodesArray: Not a number.");
+                }
+            } else if ("-numEdgesFactorArray".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.numEdgesFactorArray = stringToDoubleArray(argument);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("numEdgesFactorArray: Not a number.");
+                }
+            } else if ("-kArray".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.kArray = stringToIntArray(argument);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("kArray: Not a number.");
+                }
+            } else if ("-graphDistanceFactorArray".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.graphDistanceFactorArray = stringToDoubleArray(argument);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("graphDistanceFactorArray: Not a number.");
+                }
+            } else if ("-sampleSizeArray".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.sampleSizeArray = stringToIntArray(argument);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("sampleSizeArray: Not a number.");
+                }
+            } else if ("-transferPenaltyArray".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.transferPenaltyArray = stringToDoubleArray(argument);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("transferPenaltyArray: Not a number.");
+                }
+            } else if ("-penaltyDiscountArray".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.penaltyDiscountArray = stringToDoubleArray(argument);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("penaltyDiscountArray: Not a number.");
+                }
+            } else if ("-numRuns".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.numRuns = Integer.parseInt(argument);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("numRuns: Not a number.");
+                }
             } else {
                 throw new IllegalArgumentException(
                         "Unexpected argument: " + token);
@@ -993,23 +1059,24 @@ public final class TetradCmd {
 //    }
 
     public void runGestTest() {
-        int[] numNodesArray = {30, 100}; // try 10, 30, 100; and if time elapsed is not too long, try 300, 1000
+        /*int[] numNodesArray = {30, 100}; // try 10, 30, 100; and if time elapsed is not too long, try 300, 1000
         double[] numEdgesFactorArray = {1, 3, 10}; // try numNodes * {1, 1.5, 2}
         int[] kArray = {2,3,4,5}; // try 2-5; if time elapsed is not too long, try 7-10
         double[] graphDistanceFactorArray = {0.05, 0.1, 0.2}; // try 0,4,8,12, and then some percent of numEdges * 4
         int[] sampleSizeArray = {30, 60, 100}; // try numNodes * 0.5, numNodes, numNodes * 2 (with the floor being 100)
+        */
         int maxDegree = 10;
         int maxIndegree = 10;
         int maxOutdegree = 10;
-        double[] transferPenaltyArray = {0, 3, 10, 30}; // try 0, 1, 3, 10
+        //double[] transferPenaltyArray = {0, 3, 10, 30}; // try 0, 1, 3, 10
         boolean[] weightTransferBySampleArray = {true, false}; // try true, false
         boolean[] bumpMinTransferArray = {true, false}; // try true, false
         boolean[] faithfulnessAssumedArray = {true, false};
-        double[] penaltyDiscountArray = {4}; // try 1, 2, 4, 10
+        // double[] penaltyDiscountArray = {4}; // try 1, 2, 4, 10
         // int idNumber = 0;
-        int numRuns = 10;
+        //int numRuns = 10;
 
-        String filePath = "/Users/lizzie/Dissertation_code/Evaluation/";
+        //String filePath = "/Users/lizzie/Dissertation_code/Evaluation/";
 
         // calculate and save performance statistics
         Date date = new Date();
@@ -1023,25 +1090,33 @@ public final class TetradCmd {
         F1Arrow f1ar = new F1Arrow();
         SHD shd = new SHD();
 
-        try {
-            File dir = new File(filePath);
-            dir.mkdirs();
-            File file = new File(dir, "Comparison.txt");
+        //File file = new File(outputStreamPath);
+
+        out.println("Date \talgorithmName \tk \tgraphDistance \tnumNodes \tnumEdges " +
+                "\tsampleSize \tmaxDegree \tmaxIndegree \tmaxOutdegree \ttransferPenalty " +
+                "\tweightTransferBySample \tbumpMinTransfer \tpenaltyDiscount \tfaithfulnessAssumed" +
+                "\tadjacencyPrecision \tadjacencyRecall \tarrowheadPrecision \tarrowheadRecall \tmathewsCorrAdj " +
+                "\tmathewsCorrArrow \tf1Adj \tf1Arrow \tshd \telapsedTime " +
+                "\trunID \tgraphID \tgraphOriginID \tsampleID");
+
+        /*try {
             boolean fileExists = file.exists();
             this.out = new PrintStream(new FileOutputStream(file, true));
             if (!fileExists) {
-                out.println("Date \talgorithmName \tk \tgraphDistance \tnumNodes \tnumEdges " +
-                        "\tsampleSize \tmaxDegree \tmaxIndegree \tmaxOutdegree \ttransferPenalty " +
-                        "\tweightTransferBySample \tbumpMinTransfer \tpenaltyDiscount \tfaithfulnessAssumed" +
-                        "\tadjacencyPrecision \tadjacencyRecall \tarrowheadPrecision \tarrowheadRecall \tmathewsCorrAdj " +
-                        "\tmathewsCorrArrow \tf1Adj \tf1Arrow \tshd \telapsedTime"// + " \tmisclassificationFile"
-                        );
+
             } else {
                 System.out.println("file exists");
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+            throw new IllegalStateException(
+                    "Could not create a logfile at location " +
+                            file.getAbsolutePath()
+            );
+        }*/
+
+        int sampleID = 0;
+        int graphID = 0;
+        int graphOriginID = 0;
 
         for (int r = 0; r < numRuns; r++) {
             System.out.println("Run number: " + r);
@@ -1052,6 +1127,7 @@ public final class TetradCmd {
                     System.out.println("numEdges: " + numEdges);
 
                     Graph originalDag = GraphUtils.randomDag(numNodes, 0, numEdges, maxDegree, maxIndegree, maxOutdegree, false);
+                    graphOriginID++;
 
                     ArrayList<Graph> newDagList = new ArrayList<>();
                     newDagList.add(originalDag);
@@ -1114,6 +1190,7 @@ public final class TetradCmd {
                                     SHD = SearchGraphUtils.structuralHammingDistance(newDag, originalDag);
                                 }
 
+                                graphID++;
                                 newDagList.add(newDag);
                             }
 
@@ -1124,13 +1201,20 @@ public final class TetradCmd {
 
                                 for (double penaltyDiscount : penaltyDiscountArray) {
                                     List<Score> scoreList = new ArrayList<>();
+                                    DataModelList dataModelList = new DataModelList();
                                     for (int i = 0; i < k; i++) {
                                         LargeScaleSimulation semSimulator = new LargeScaleSimulation(newDagList.get(i));
                                         DataSet data = semSimulator.simulateDataFisher(sampleSize);
                                         SemBicScore score = new SemBicScore(new CovarianceMatrixOnTheFly(data));
                                         score.setPenaltyDiscount(penaltyDiscount);
                                         scoreList.add(score);
+                                        dataModelList.add(i, data);
                                     }
+                                    sampleID++;
+
+                                    // create score for IMaGES
+                                    final SemBicScoreImages imagesScore = new SemBicScoreImages(dataModelList);
+                                    imagesScore.setPenaltyDiscount(penaltyDiscount);
 
                                     for (boolean faithfulnessAssumed : faithfulnessAssumedArray) {
                                         System.out.println("faithfulnessAssumed: " + faithfulnessAssumed);
@@ -1152,6 +1236,14 @@ public final class TetradCmd {
 
                                         long fgesStop = System.currentTimeMillis();
                                         long fgesElapsedTime = fgesStop - fgesStart;
+
+                                        // run IMaGES
+                                        long imagesStart = System.currentTimeMillis();
+                                        Fges imagesSearch = new edu.cmu.tetrad.search.Fges(imagesScore);
+                                        imagesSearch.setFaithfulnessAssumed(faithfulnessAssumed);
+                                        Graph imagesResult = imagesSearch.search();
+                                        long imagesStop = System.currentTimeMillis();
+                                        long imagesElapsedTime = imagesStop - imagesStart;
 
                                         GraphConfiguration fgesResults = new GraphConfiguration(fgesList);
                                         GraphConfiguration trueResults = new GraphConfiguration(trueList);
@@ -1195,7 +1287,59 @@ public final class TetradCmd {
                                                     f1AdjF + "\t" +
                                                     f1ArrowF + "\t" +
                                                     shd1F + "\t" +
-                                                    fgesElapsedTime //+ "\t" + fgesMisclassificationFilename
+                                                    fgesElapsedTime + "\t" +
+
+                                                    // indices
+                                                    r  + "\t" +
+                                                    graphID + "\t" +
+                                                    graphOriginID + "\t" +
+                                                    sampleID);
+
+                                            double adjacencyPrecisionI = ap.getValue(trueResults.getGraph(i), imagesResult);
+                                            double adjacencyRecallI = ar.getValue(trueResults.getGraph(i), imagesResult);
+                                            double arrowheadPrecisionI = arp.getValue(trueResults.getGraph(i), imagesResult);
+                                            double arrowheadRecallI = arr.getValue(trueResults.getGraph(i), imagesResult);
+                                            double mathewsCorrAdjI = mca.getValue(trueResults.getGraph(i), imagesResult);
+                                            double mathewsCorrArrowI = mcar.getValue(trueResults.getGraph(i), imagesResult);
+                                            double f1AdjI = f1a.getValue(trueResults.getGraph(i), imagesResult);
+                                            double f1ArrowI = f1ar.getValue(trueResults.getGraph(i), imagesResult);
+                                            double shd1I = shd.getValue(trueResults.getGraph(i), imagesResult);
+
+                                            // write IMaGES output to file
+                                            out.println(date +
+                                                    // algorithm and data generation parameters
+                                                    "\t IMaGES \t" +
+                                                    k + "\t" +
+                                                    graphDistance + "\t" +
+                                                    numNodes + "\t" +
+                                                    numEdges + "\t" +
+                                                    sampleSize + "\t" +
+                                                    maxDegree + "\t" +
+                                                    maxIndegree + "\t" +
+                                                    maxOutdegree + "\t" +
+                                                    "NA" + "\t" +
+                                                    "NA" + "\t" +
+                                                    "NA" + "\t" +
+                                                    penaltyDiscount + "\t" +
+                                                    faithfulnessAssumed + "\t" +
+
+                                                    // performance
+                                                    adjacencyPrecisionI + "\t" +
+                                                    adjacencyRecallI + "\t" +
+                                                    arrowheadPrecisionI + "\t" +
+                                                    arrowheadRecallI + "\t" +
+                                                    mathewsCorrAdjI + "\t" +
+                                                    mathewsCorrArrowI + "\t" +
+                                                    f1AdjI + "\t" +
+                                                    f1ArrowI + "\t" +
+                                                    shd1I + "\t" +
+                                                    imagesElapsedTime + "\t" +
+
+                                                    // indices
+                                                    r  + "\t" +
+                                                    graphID + "\t" +
+                                                    graphOriginID + "\t" +
+                                                    sampleID
                                             );
                                         }
 
@@ -1224,26 +1368,6 @@ public final class TetradCmd {
                                                     for (int i = 0; i < k; i++) {
                                                         gestResults.setGraph(i, GraphUtils.replaceNodes(gestResults.getGraph(i), fgesResults.getGraph(i).getNodes()));
                                                     }
-
-                                                    /*// rows (on the left) are the estimated edges; columns (marked on top) are the true edges
-                                                    int[][] gestCounts = sumMultiMisclassifications(gestResults, trueResults);
-                                                    System.out.println("GEST results:");
-                                                    System.out.println(countsToMisclassifications(gestCounts));
-                                                    int[][] fgesCounts = sumMultiMisclassifications(fgesResults, trueResults);
-                                                    System.out.println("FGES results:");
-                                                    System.out.println(countsToMisclassifications(fgesCounts));
-*/
-
-                                                    /*String gestMisclassificationFilename = "misclassification_GEST_" + date + "_" + idNumber + ".txt";
-                                                    gestMisclassificationFilename = gestMisclassificationFilename.replace(' ', '_');
-                                                    gestMisclassificationFilename = gestMisclassificationFilename.replace(':', '-');
-                                                    gestMisclassificationFilename = gestMisclassificationFilename.replace('/', '-');
-                                                    String fgesMisclassificationFilename = "misclassification_FGES_" + date + "_" + idNumber + ".txt";
-                                                    fgesMisclassificationFilename = fgesMisclassificationFilename.replace(' ', '_');
-                                                    fgesMisclassificationFilename = fgesMisclassificationFilename.replace(':', '-');
-                                                    fgesMisclassificationFilename = fgesMisclassificationFilename.replace('/', '-');
-*/
-                                                    //idNumber++;
 
                                                     for (int i = 0; i < k; i++) {
                                                         double adjacencyPrecision = ap.getValue(trueResults.getGraph(i), gestResults.getGraph(i));
@@ -1285,36 +1409,16 @@ public final class TetradCmd {
                                                                 f1Adj + "\t" +
                                                                 f1Arrow + "\t" +
                                                                 shd1 + "\t" +
-                                                                gestElapsedTime // + "\t" + gestMisclassificationFilename
+                                                                gestElapsedTime + "\t" +
+
+                                                                // indices
+                                                                r  + "\t" +
+                                                                graphID + "\t" +
+                                                                graphOriginID + "\t" +
+                                                                sampleID
                                                         );
 
                                                     }
-
-                                                    /*//Misclassfication Matrix (saved to a separate file because it's not a single number; so put that filename in the stats file)
-                                                    try {
-                                                        File dir = new File(filePath);
-                                                        dir.mkdirs();
-                                                        // GEST
-                                                        File misclassificationFileGest = new File(dir, gestMisclassificationFilename);
-                                                        if (!misclassificationFileGest.exists()) {
-                                                            misclassificationFileGest.createNewFile();
-                                                        }
-                                                        FileWriter fw = new FileWriter(misclassificationFileGest.getAbsoluteFile());
-                                                        BufferedWriter bw = new BufferedWriter(fw);
-                                                        bw.write(countsToMisclassifications(gestCounts) + "\n");
-                                                        bw.close();
-                                                        // FGES
-                                                        File misclassificationFileFges = new File(dir, fgesMisclassificationFilename);
-                                                        if (!misclassificationFileFges.exists()) {
-                                                            misclassificationFileFges.createNewFile();
-                                                        }
-                                                        FileWriter fw2 = new FileWriter(misclassificationFileFges.getAbsoluteFile());
-                                                        BufferedWriter bw2 = new BufferedWriter(fw2);
-                                                        bw2.write(countsToMisclassifications(fgesCounts) + "\n");
-                                                        bw2.close();
-                                                    } catch (Exception e) {
-                                                        throw new RuntimeException(e);
-                                                    }*/
                                                 }
                                             }
                                         }
@@ -1343,6 +1447,33 @@ public final class TetradCmd {
         return counts;
     }
 
+    public static int[] stringToIntArray(String s) {
+        // string must be comma-separated with no whitespace, e.g. "1,2,3,4,5"
+        String[] array = s.split(",");
+        int[] ints = new int[array.length];
+        for(int i=0; i<array.length; i++) {
+            try {
+                ints[i] = Integer.parseInt(array[i]);
+            } catch (NumberFormatException nfe) {
+                //Not an integer
+            }
+        }
+        return ints;
+    }
+
+    public static double[] stringToDoubleArray(String s) {
+        // string must be comma-separated with no whitespace, e.g. "1,2,3,4,5"
+        String[] array = s.split(",");
+        double[] doubles = new double[array.length];
+        for(int i=0; i<array.length; i++) {
+            try {
+                doubles[i] =  Double.parseDouble(array[i]);
+            } catch (NumberFormatException nfe) {
+                //Not an integer
+            }
+        }
+        return doubles;
+    }
 
     public static String countsToMisclassifications(int[][] counts) {
         StringBuilder builder = new StringBuilder();
