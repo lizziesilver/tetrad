@@ -1,0 +1,10 @@
+edu/cmu/tetradapp/test/TestDataWrapper.class
+edu/cmu/tetradapp/test/TestLogisticRegression.class
+edu/cmu/tetradapp/test/TestWatchedProcessDialogs.class
+edu/cmu/tetradapp/test/AdjustCopyrights.class
+edu/cmu/tetradapp/test/TestIndependenceFacts.class
+edu/cmu/tetradapp/test/TestCyclicity.class
+edu/cmu/tetradapp/test/TestGraphWorkbench.class
+edu/cmu/tetradapp/test/TestVersion.class
+edu/cmu/tetradapp/test/TestDisplayNode.class
+edu/cmu/tetradapp/test/TestSerialization.class

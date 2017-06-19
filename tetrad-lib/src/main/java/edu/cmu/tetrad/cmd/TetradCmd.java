@@ -49,14 +49,18 @@ import java.util.Set;
 public final class TetradCmd {
     private String algorithmName;
     private String dataFileName;
+    private String[] dataFileNameArray;
     private String knowledgeFileName;
     private String dataTypeName;
     private String graphXmlFilename;
     private String graphTxtFilename;
     private String initialGraphTxtFilename;
+    private String trueGraphTxtFilename;
+    private String comparisonGraphTxtFilename;
     private int depth = -1;
     private double significance = 0.05;
     private DataSet data;
+    private List<DataSet> dataSetList;
     private ICovarianceMatrix covarianceMatrix;
     private String outputStreamPath;
     private PrintStream out = System.out;
@@ -71,6 +75,8 @@ public final class TetradCmd {
     private double penaltyDiscount = 1.0;
     private TestType testType = TestType.TETRAD_DELTA;
     private Graph initialGraph;
+    private Graph trueInputGraph;
+    private Graph comparisonGraph;
     private boolean rfciUsed = false;
     private boolean nodsep = false;
     private boolean useCovariance = true;
@@ -86,6 +92,9 @@ public final class TetradCmd {
     private double[] transferPenaltyArray = {3};
     private double[] penaltyDiscountArray = {4};
     private int numRuns = 10;
+    private boolean[] weightTransferBySampleArray = {false}; // this doesn't seem to affect performance much
+    private boolean[] bumpMinTransferArray = {true};
+    private boolean[] faithfulnessAssumedArray = {true, false};
 
     public TetradCmd(String[] argv) {
         readArguments(new StringArrayTokenizer(argv));
@@ -132,6 +141,20 @@ public final class TetradCmd {
                 }
 
                 dataFileName = argument;
+                useCovariance = false;
+            } else if ("-dataList".equalsIgnoreCase(token)) {
+                String s = tokenizer.nextToken();
+
+                if (s.startsWith("-")) {
+                    throw new IllegalArgumentException(
+                            "'-dataList' tag must be followed " +
+                                    "by an argument indicating the paths to the data " +
+                                    "files (comma-separated, no extra whitespace)."
+                    );
+                }
+                String[] argument = s.split(",");
+
+                dataFileNameArray = argument;
                 useCovariance = false;
             } else if ("-covariance".equalsIgnoreCase(token)) {
                 String argument = tokenizer.nextToken();
@@ -314,6 +337,30 @@ public final class TetradCmd {
                 }
 
                 initialGraphTxtFilename = argument;
+            } else if ("-truegraphtxt".equals(token)) {
+                String argument = tokenizer.nextToken();
+
+                if (argument.startsWith("-")) {
+                    throw new IllegalArgumentException(
+                            "'-truegraphtxt' tag must be followed " +
+                                    "by an argument indicating the path to the file where the graph txt output " +
+                                    "is to be written."
+                    );
+                }
+
+                trueGraphTxtFilename = argument;
+            } else if ("-comparisongraphtxt".equals(token)) {
+                String argument = tokenizer.nextToken();
+
+                if (argument.startsWith("-")) {
+                    throw new IllegalArgumentException(
+                            "'-comparisongraphtxt' tag must be followed " +
+                                    "by an argument indicating the path to the file where the graph txt output " +
+                                    "is to be written."
+                    );
+                }
+
+                comparisonGraphTxtFilename = argument;
             } else if ("-whitespace".equals(token)) {
                 whitespace = true;
             } else if ("-sampleprior".equals(token)) {
@@ -430,6 +477,27 @@ public final class TetradCmd {
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException("penaltyDiscountArray: Not a number.");
                 }
+            } else if ("-weightTransferBySampleArray".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.weightTransferBySampleArray = stringToBooleanArray(argument);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("weightTransferBySampleArray: Not a boolean.");
+                }
+            } else if ("-bumpMinTransferArray".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.bumpMinTransferArray = stringToBooleanArray(argument);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("bumpMinTransferArray: Not a boolean.");
+                }
+            } else if ("-faithfulnessAssumedArray".equalsIgnoreCase(token)) {
+                try {
+                    String argument = tokenizer.nextToken();
+                    this.faithfulnessAssumedArray = stringToBooleanArray(argument);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("faithfulnessAssumedArray: Not a boolean.");
+                }
             } else if ("-numRuns".equalsIgnoreCase(token)) {
                 try {
                     String argument = tokenizer.nextToken();
@@ -443,6 +511,83 @@ public final class TetradCmd {
             }
 
         }
+    }
+
+    private void loadDataList() {
+        if (dataFileNameArray == null) {
+            throw new IllegalStateException("No lis of data files was specified.");
+        }
+
+        this.dataSetList = new ArrayList<>();
+
+        for (int i = 0; i < dataFileNameArray.length; i++) {
+            this.dataFileName = dataFileNameArray[i];
+            loadData();
+            dataSetList.add(data);
+        }
+
+    }
+
+
+    private void compareGraphs() {
+
+        if (trueGraphTxtFilename == null) {
+            throw new IllegalStateException("No true graph was specified.");
+        } else {
+            trueInputGraph = GraphUtils.loadGraphTxt(new File(trueGraphTxtFilename));
+        }
+        if (comparisonGraphTxtFilename == null) {
+            throw new IllegalStateException("No comparison graph was specified.");
+        } else {
+            comparisonGraph = GraphUtils.loadGraphTxt(new File(comparisonGraphTxtFilename));
+        }
+        if (outputStreamPath == null) {
+            throw new IllegalStateException("No output file was specified.");
+        } else {
+            setOutputStream();
+        }
+
+        trueInputGraph = GraphUtils.replaceNodes(trueInputGraph, comparisonGraph.getNodes());
+
+        AdjacencyPrecision ap = new AdjacencyPrecision();
+        AdjacencyRecall ar = new AdjacencyRecall();
+        ArrowheadPrecision arp = new ArrowheadPrecision();
+        ArrowheadRecall arr = new ArrowheadRecall();
+        MathewsCorrAdj mca = new MathewsCorrAdj();
+        MathewsCorrArrow mcar = new MathewsCorrArrow();
+        F1Adj f1a = new F1Adj();
+        F1Arrow f1ar = new F1Arrow();
+        SHD shd = new SHD();
+
+        // write header to file
+        out.println("trueNumEdges \ttrueNumNodes \tcomparisonNumEdges \tcomparisonNumNodes " +
+                "\tadjacencyPrecision \tadjacencyRecall \tarrowheadPrecision \tarrowheadRecall \tmathewsCorrAdj " +
+                "\tmathewsCorrArrow \tf1Adj \tf1Arrow \tshd");
+
+        double adjacencyPrecisionF = ap.getValue(trueInputGraph, comparisonGraph);
+        double adjacencyRecallF = ar.getValue(trueInputGraph, comparisonGraph);
+        double arrowheadPrecisionF = arp.getValue(trueInputGraph, comparisonGraph);
+        double arrowheadRecallF = arr.getValue(trueInputGraph, comparisonGraph);
+        double mathewsCorrAdjF = mca.getValue(trueInputGraph, comparisonGraph);
+        double mathewsCorrArrowF = mcar.getValue(trueInputGraph, comparisonGraph);
+        double f1AdjF = f1a.getValue(trueInputGraph, comparisonGraph);
+        double f1ArrowF = f1ar.getValue(trueInputGraph, comparisonGraph);
+        double shd1F = shd.getValue(trueInputGraph, comparisonGraph);
+
+        // write comparison output to file
+        out.println(trueInputGraph.getNumEdges() + "\t" +
+                trueInputGraph.getNumNodes() + "\t" +
+                comparisonGraph.getNumEdges() + "\t" +
+                comparisonGraph.getNumNodes() + "\t" +
+                adjacencyPrecisionF + "\t" +
+                adjacencyRecallF + "\t" +
+                arrowheadPrecisionF + "\t" +
+                arrowheadRecallF + "\t" +
+                mathewsCorrAdjF + "\t" +
+                mathewsCorrArrowF + "\t" +
+                f1AdjF + "\t" +
+                f1ArrowF + "\t" +
+                shd1F + "\t");
     }
 
     private void loadData() {
@@ -478,7 +623,9 @@ public final class TetradCmd {
 //                            knownVariables);
 
                 DataReader reader = new DataReader();
-                reader.setMaxIntegralDiscrete(Integer.MAX_VALUE);
+
+                //NOTE: Lizzie set this to zero so she could run GEST. It should be Integer.MAX_VALUE
+                reader.setMaxIntegralDiscrete(0);
 
                 if (whitespace) {
                     reader.setDelimiter(DelimiterType.WHITESPACE);
@@ -512,7 +659,7 @@ public final class TetradCmd {
 
     private void loadKnowledge() {
         if (knowledgeFileName == null) {
-            throw new IllegalStateException("No data file was specified.");
+            throw new IllegalStateException("No knowledge file was specified.");
         }
 
         try {
@@ -557,6 +704,10 @@ public final class TetradCmd {
             loadData();
         }
 
+        if (dataFileNameArray != null) {
+            loadDataList();
+        }
+
         if (knowledgeFileName != null) {
             loadKnowledge();
         }
@@ -583,6 +734,12 @@ public final class TetradCmd {
             printRandomDag();
         } else if ("testGest".equalsIgnoreCase(algorithmName)) {
             runGestTest();
+        } else if ("gest".equalsIgnoreCase(algorithmName)) {
+            runGest();
+        } else if ("images".equalsIgnoreCase(algorithmName)) {
+            runImages();
+        } else if ("compareGraphs".equalsIgnoreCase(algorithmName)) {
+            compareGraphs();
         } else {
             TetradLogger.getInstance().reset();
             TetradLogger.getInstance().removeOutputStream(System.out);
@@ -1009,6 +1166,38 @@ public final class TetradCmd {
         }
     }
 
+    private void writeGraphs(GraphConfiguration resultGraphs) {
+        for (int i = 0; i < resultGraphs.getNumGraphs(); i++) {
+            if (graphXmlFilename != null) {
+                try {
+                    String xml = GraphUtils.graphToXml(resultGraphs.getGraph(i));
+
+                    File file = new File(graphXmlFilename + "_" + i + ".xml");
+
+                    PrintWriter out = new PrintWriter(file);
+
+                    out.print(xml);
+                    out.close();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (graphTxtFilename != null) {
+                try {
+                    File file = new File(graphTxtFilename + "_" + i + ".txt");
+
+                    PrintWriter out = new PrintWriter(file);
+
+                    out.print(resultGraphs.getGraph(i));
+                    out.close();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     private IndependenceTest getIndependenceTest() {
         IndependenceTest independence;
 
@@ -1058,6 +1247,107 @@ public final class TetradCmd {
 //                "'Warning', 'Info', 'Config', 'Fine', 'Finer', 'Finest'.");
 //    }
 
+    public void runImages() {
+        if (this.dataSetList == null) {
+            throw new IllegalStateException("Data did not load correctly.");
+        }
+
+        if (verbose) {
+            systemPrint("IMaGES");
+            //systemPrint(getKnowledge().toString());
+            systemPrint(getVariables().toString());
+
+            //TetradLogger.getInstance().addOutputStream(System.out);
+
+            //TetradLogger.getInstance().setEventsToLog("info", "independencies", "knowledgeOrientations",
+            //"impliedOrientations", "graph");
+//            TetradLogger.getInstance().setForceLog(true);
+
+            //TetradLogger.getInstance().log("info", "Testing it.");
+        }
+
+        DataModelList dataModelList = new DataModelList();
+
+        for (int i = 0; i < dataSetList.size(); i++) {
+            dataModelList.add(i, data);
+        }
+
+        SemBicScoreImages imagesScore = new SemBicScoreImages(dataModelList);
+        imagesScore.setPenaltyDiscount(penaltyDiscount);
+
+        if (faithfulnessAssumedArray.length > 1) {
+            System.out.println("Warning: faithfulnessAssumedArray has length > 1, only first element will be used");
+        }
+
+        Fges fges = new Fges(imagesScore);
+        fges.setFaithfulnessAssumed(faithfulnessAssumedArray[0]);
+        Graph imagesResult = fges.search();
+
+        outPrint("\nResult graph:");
+        outPrint(imagesResult.toString());
+
+        writeGraph(imagesResult);
+    }
+
+    public void runGest() {
+
+        if (this.dataSetList == null) {
+            throw new IllegalStateException("Data did not load correctly.");
+        }
+
+        if (verbose) {
+            systemPrint("GEST");
+            //systemPrint(getKnowledge().toString());
+            systemPrint(getVariables().toString());
+
+            //TetradLogger.getInstance().addOutputStream(System.out);
+
+            //TetradLogger.getInstance().setEventsToLog("info", "independencies", "knowledgeOrientations",
+            //        "impliedOrientations", "graph");
+//            TetradLogger.getInstance().setForceLog(true);
+
+            //TetradLogger.getInstance().log("info", "Testing it.");
+        }
+
+        Gest gest;
+
+        List<Node> variables = dataSetList.get(0).getVariables();
+
+        List<Score> scoreList = new ArrayList<>();
+
+        for (int i = 0; i < dataSetList.size(); i++) {
+            SemBicScore score = new SemBicScore(new CovarianceMatrixOnTheFly(dataSetList.get(i)));
+            score.setVariables(variables);
+            score.setPenaltyDiscount(penaltyDiscount);
+            scoreList.add(score);
+        }
+
+        if (transferPenaltyArray.length > 1) {
+            System.out.println("Warning: transferPenaltyArray has length > 1, only first element will be used");
+        }
+        if (weightTransferBySampleArray.length > 1) {
+            System.out.println("Warning: weightTransferBySampleArray has length > 1, only first element will be used");
+        }
+        if (bumpMinTransferArray.length > 1) {
+            System.out.println("Warning: bumpMinTransferArray has length > 1, only first element will be used");
+        }
+
+        gest = new Gest(scoreList, transferPenaltyArray[0], weightTransferBySampleArray[0], bumpMinTransferArray[0]);
+
+
+        //gest.setKnowledge(getKnowledge());
+
+        // Convert back to Graphs..
+        GraphConfiguration resultGraphs = gest.search();
+
+        // PrintUtil outputStreamPath problem and graphs.
+        outPrint("\nResult graphs:");
+        outPrint(resultGraphs.toString());
+
+        writeGraphs(resultGraphs);
+
+    }
+
     public void runGestTest() {
         /*int[] numNodesArray = {30, 100}; // try 10, 30, 100; and if time elapsed is not too long, try 300, 1000
         double[] numEdgesFactorArray = {1, 3, 10}; // try numNodes * {1, 1.5, 2}
@@ -1069,9 +1359,9 @@ public final class TetradCmd {
         int maxIndegree = 10;
         int maxOutdegree = 10;
         //double[] transferPenaltyArray = {0, 3, 10, 30}; // try 0, 1, 3, 10
-        boolean[] weightTransferBySampleArray = {true, false}; // try true, false
-        boolean[] bumpMinTransferArray = {true, false}; // try true, false
-        boolean[] faithfulnessAssumedArray = {true, false};
+        //boolean[] weightTransferBySampleArray = {false}; // this doesn't seem to affect performance much
+        //boolean[] bumpMinTransferArray = {true, false}; // try true, false
+        //boolean[] faithfulnessAssumedArray = {true, false};
         // double[] penaltyDiscountArray = {4}; // try 1, 2, 4, 10
         // int idNumber = 0;
         //int numRuns = 10;
@@ -1295,6 +1585,8 @@ public final class TetradCmd {
                                                     graphOriginID + "\t" +
                                                     sampleID);
 
+                                            imagesResult = GraphUtils.replaceNodes(imagesResult, trueResults.getGraph(i).getNodes());
+
                                             double adjacencyPrecisionI = ap.getValue(trueResults.getGraph(i), imagesResult);
                                             double adjacencyRecallI = ar.getValue(trueResults.getGraph(i), imagesResult);
                                             double arrowheadPrecisionI = arp.getValue(trueResults.getGraph(i), imagesResult);
@@ -1475,6 +1767,19 @@ public final class TetradCmd {
         return doubles;
     }
 
+    public static boolean[] stringToBooleanArray(String s) {
+        String[] array = s.split(",");
+        boolean[] bools = new boolean[array.length];
+        for(int i=0; i<array.length; i++) {
+            try {
+                bools[i] = Boolean.parseBoolean(array[i]);
+            } catch (Exception nfe) {
+                //Not an integer
+            }
+        }
+        return bools;
+    }
+
     public static String countsToMisclassifications(int[][] counts) {
         StringBuilder builder = new StringBuilder();
 
@@ -1536,6 +1841,8 @@ public final class TetradCmd {
             return data.getVariables();
         } else if (covarianceMatrix != null) {
             return covarianceMatrix.getVariables();
+        } else if (dataSetList != null) {
+            return dataSetList.get(0).getVariables();
         }
 
         throw new IllegalArgumentException("Data nor covariance specified.");
